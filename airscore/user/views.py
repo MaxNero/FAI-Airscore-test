@@ -279,6 +279,7 @@ def airspace_check_admin():
     compid = request.args.get('compid')
     taskid = request.args.get('taskid')
 
+    params = ['outer_limit', 'boundary', 'inner_limit', 'boundary_penalty', 'max_penalty']
     if request.method == 'POST':
         checkform = AirspaceCheckForm()
         '''adjusting parameters'''
@@ -288,13 +289,14 @@ def airspace_check_admin():
             checkform.v_boundary.data = checkform.v_inner_limit.data
             checkform.v_boundary_penalty.data = checkform.v_max_penalty.data
         if not checkform.h_v.data:
-            params = ['outer_limit', 'boundary', 'inner_limit', 'boundary_penalty', 'max_penalty']
             for el in params:
                 getattr(checkform, f'v_{el}').data = getattr(checkform, f'h_{el}').data
         if checkform.validate_on_submit():
             resp = frontendUtils.save_airspace_check(compid, taskid, obj={el.name: el.data for el in checkform})
             flash(f'Settings saved.', 'info') if resp else flash(f'There was an error, saving failed.', 'danger')
         else:
+            # h_v value
+            checkform.h_v.data = not all([getattr(checkform, f'v_{el}').data == getattr(checkform, f'h_{el}').data for el in params])
             for item in checkform:
                 if item.errors:
                     flash(f"{item.label.text} ({item.data}): {', '.join(x for x in item.errors)}", category='danger')

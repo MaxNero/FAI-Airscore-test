@@ -238,8 +238,6 @@ var isSubmitting = false;
 
 $(document).ready(function() {
   $('#airspace_check_form').data('initial-state', $('#airspace_check_form').serialize());
-  show_boundary();
-  show_v_limit();
   update_parameters();
   draw_charts();
 
