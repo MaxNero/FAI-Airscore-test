@@ -52,8 +52,7 @@ def distance_validity(task):
     nomdist = task.formula.nominal_dist  # nom distance
     mindist = task.formula.min_dist  # min distance
     totalflown = task.tot_dist_over_min  # total distance flown by pilots over min. distance
-    BestDistOverNom = task.max_distance - nomdist  # best distance flown ove minimum dist.
-    # bestdistovermin = stats['max_distance'] - mindist     # best distance flown ove minimum dist.
+    BestDistOverNom = task.max_distance - nomdist  # best distance flown over nominal dist.
     NumPilotsFlying = task.pilots_launched  # Num Pilots flown
 
     if not (NumPilotsFlying > 0):  # sanity
