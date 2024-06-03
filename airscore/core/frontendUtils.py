@@ -1671,7 +1671,7 @@ def check_short_code(comp_short_code):
 
 def import_participants_from_fsdb(comp_id: int, file: Path, from_CIVL=False) -> dict:
     """read the fsdb file"""
-    from fsdb import FSDB
+    from sources.fsdb import FSDB
     from pilot.participant import unregister_all
     from ranking import delete_meta
 
@@ -1735,7 +1735,7 @@ def create_participants_html(comp_id: int) -> (str, dict) or None:
 
 
 def create_participants_fsdb(comp_id: int) -> (str, str) or None:
-    from fsdb import FSDB
+    from sources.fsdb import FSDB
 
     try:
         return FSDB.create_participants(comp_id)

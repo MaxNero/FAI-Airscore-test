@@ -1,6 +1,8 @@
 import fsdb
 import datetime
 from pathlib import Path
+import sources.fsdb as fsdb
+
 
 test_file = Path('/app/tests/data/test_sm20c5.fsdb')
 

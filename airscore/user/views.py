@@ -362,7 +362,7 @@ def _create_comp():
 @blueprint.route('/_import_comp_fsdb/', methods=['POST'])
 @login_required
 def _import_comp_fsdb():
-    from fsdb import FSDB
+    from sources.fsdb import FSDB
     if request.method == "POST":
         if not request.files or "filesize" not in request.cookies:
             return jsonify(success=False, error='No FSDB file was given.')
@@ -1979,7 +1979,7 @@ def _adjust_task_result(taskid: int):
 @blueprint.route('/_export_fsdb/<int:compid>', methods=['GET'])
 @login_required
 def _export_fsdb(compid: int):
-    from fsdb import FSDB
+    from sources.fsdb import FSDB
     import tempfile
     comp_fsdb = FSDB.create(compid)
     if not comp_fsdb:

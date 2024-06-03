@@ -6,20 +6,22 @@ contains
     read    - A XML reader to read an FSDB file and import to AirScore
     create  - A XML writer to export AirScore results to an FSDB file
 
-Use: from fsdb import read, write
+Use: from sources.fsdb import FSDB
 
 Stuart Mackintosh, Antonio Golfari - 2019
 """
 
+import lxml.etree as ET
+
 from datetime import datetime
 from pathlib import Path
+from lxml.etree import CDATA
 
-import lxml.etree as ET
+from . import utils
 from calcUtils import c_round, get_int, get_isotime, km, sec_to_time
 from comp import Comp
 from compUtils import is_ext
 from formula import Formula
-from lxml.etree import CDATA
 from pilot.flightresult import FlightResult, update_all_results
 from pilot.participant import Participant, mass_import_participants
 from task import Task
@@ -816,13 +818,5 @@ class FSDB(object):
 
 def read_fsdb_file(file: Path) -> "ET | None":
     """read the fsdb file"""
-    try:
-        tree = ET.parse(file)
-    except TypeError:
-        tree = ET.parse(file.as_posix())
-    except ET.Error:
-        print("FSDB Read Error.")
-        return None
-    finally:
-        root = tree.getroot()
-        return root
+
+    return utils.read_xml_file(file)
