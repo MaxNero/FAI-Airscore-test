@@ -57,7 +57,7 @@ class Turnpoint:
         radius: radius of cylinder or line in m
         type: type of turnpoint; "launch",
                                  "speed",
-                                 "cylinder",
+                                 "waypoint",
                                  "endspeed",
                                  "goal"
         shape: "line" or "circle"

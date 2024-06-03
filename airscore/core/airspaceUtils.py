@@ -22,17 +22,17 @@ NM_in_meters = 1852.00
 Ft_in_meters = 0.3048000
 hPa_in_feet = 27.3053
 colours = {
-    'R': '#be25f6',  # restricted
-    'Q': '#be25f6',  # danger
-    'P': '#d42c31',  # prohibited
-    'A': '#d42c31',  # class A
-    'B': '#d42c31',  # class B
-    'C': '#d42c31',  # class C
-    'D': '#d42c31',  # class D
-    'GP': '#d42c31',  # glider prohibited
+    'R': '#be25f6',    # restricted
+    'Q': '#be25f6',    # danger
+    'P': '#d42c31',    # prohibited
+    'A': '#d42c31',    # class A
+    'B': '#d42c31',    # class B
+    'C': '#d42c31',    # class C
+    'D': '#d42c31',    # class D
+    'GP': '#d42c31',   # glider prohibited
     'Z': '#be25f6',
     'CTR': '#d42c31',  # CTR
-    'W': '#be25f6'  # wave window
+    'W': '#be25f6'     # wave window
 }
 
 
