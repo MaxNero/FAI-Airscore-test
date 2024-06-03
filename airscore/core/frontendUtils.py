@@ -2659,3 +2659,24 @@ def recheck_needed(task_id: int):
     from task import task_need_recheck
     return task_need_recheck(task_id)
 
+
+def get_task_from_file(task_id: int, file) -> bool:
+    """reads .xctsk and .tsk files, creates a Task object and adds it to the db"""
+    from sources import xctrack, taskplanner
+    from task import Task, write_map_json
+
+    ext = file.filename
+    if 'xctsk' in ext:
+        # xctrack file
+        data = xctrack.read_xctsk_file(file)
+        task_info = xctrack.read_task(data)
+    elif 'tsk' in ext:
+        # task planner file
+        data = taskplanner.read_tsk_file(file)
+        task_info = taskplanner.read_task(data)
+    else:
+        return False
+
+    task = Task.update_from_dict(task_id, task_info)
+    return True
+

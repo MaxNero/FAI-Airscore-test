@@ -189,10 +189,14 @@ Task Settings
     </section>
     <div class='tab-row column-wrap collapse' id='import_task'>
       <section class="row-wrap">
-        <span class="col col-lg-3 font-weight-bold text-primary mr-3 mt-1 mb-1">Import XCTrack Task File: </span>
-        <button class='col col-lg-2 btn btn-primary mr-4 ' id='XCTrack_button'>Browse...</button>
-        <input id='XCTrack_fileupload' type='file' size='chars' class='custom-file-input'
-               oninput='filesize(this);' data-url='/users/_upload_XCTrack/{{ taskid }}' name='track_file'>
+        <span class="col col-lg-8 font-weight-bold text-primary mr-3 mt-1 mb-1">
+          Import Task from external file:
+          It's possible to import the task details from files created by <a href="https://xctrack.org" target="_blank">XCTrack</a> (.xctsk)
+          or created by Tonino Tarsi's <a href="https://www.vololiberomontecucco.it/taskcreator/" target="_blank">Task Creator</a> (.tsk)
+        </span>
+        <button class='col col-lg-2 btn btn-primary mr-4 ' id='task_file_button'>Browse...</button>
+        <input id='task_fileupload' type='file' size='chars' class='custom-file-input'
+               oninput='filesize(this);' data-url='/users/_upload_task/{{ taskid }}' name='track_file'>
       </section>
       <section class="row-wrap" id="copy_wpts_section">
         <span class="col col-lg-2 font-weight-bold text-primary mr-3 mt-1 mb-1">Get Route from: </span>

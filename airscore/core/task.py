@@ -950,142 +950,44 @@ class Task(object):
             if self.turnpoints:
                 self.update_waypoints()
 
-    def update_from_xctrack_data(self, taskfile_data):
-        """processes XCTrack file that is already in memory as json data and updates the task defintion"""
-        from calcUtils import string_to_seconds
-        from compUtils import get_wpts
-
-        startopenzulu = taskfile_data['sss']['timeGates'][0]
-        deadlinezulu = taskfile_data['goal']['deadline']
-
-        self.start_time = string_to_seconds(startopenzulu)
-        self.task_deadline = string_to_seconds(deadlinezulu)
-
-        '''check task start and start close times are ok for new start time
-        we will check to be at least 1 hour before and after'''
-        if not self.window_open_time or self.start_time - self.window_open_time < 3600:
-            self.window_open_time = self.start_time - 3600
-        if not self.start_close_time or self.start_close_time - self.start_time < 3600:
-            self.start_close_time = self.start_time + 3600
-
-        if taskfile_data['sss']['type'] == 'ELAPSED-TIME':
-            self.task_type = 'elapsed time'
-        else:
-            self.task_type = 'race'
-            '''manage multi start'''
-            self.SS_interval = 0
-            if len(taskfile_data['sss']['timeGates']) > 1:
-                second_start = string_to_seconds(taskfile_data['sss']['timeGates'][1])
-                self.SS_interval = int((second_start - self.start_time) / 60)  # interval in minutes
-                self.start_close_time = (
-                    int(self.start_time + len(taskfile_data['sss']['timeGates']) * (second_start - self.start_time)) - 1
-                )
-
-        print('xct start:       {} '.format(self.start_time))
-        print('xct deadline:    {} '.format(self.task_deadline))
-
-        waypoint_list = get_wpts(self.id)
-        print('n. waypoints: {}'.format(len(taskfile_data['turnpoints'])))
-
-        for i, tp in enumerate(taskfile_data['turnpoints']):
-            waytype = "waypoint"
-            shape = "circle"
-            how = "entry"  # default entry .. looks like xctrack doesn't support exit cylinders apart from SSS
-            wpID = waypoint_list.get(tp["waypoint"]["name"]) or None
-            wpNum = i + 1
-
-            if i < len(taskfile_data['turnpoints']) - 1:
-                if 'type' in tp:
-                    if tp['type'] == 'TAKEOFF':
-                        waytype = "launch"  # live
-                        # waytype = "start"  # aws
-                        how = "exit"
-                    elif tp['type'] == 'SSS':
-                        waytype = "speed"
-                        if taskfile_data['sss']['direction'] == "EXIT":  # get the direction form the SSS section
-                            how = "exit"
-                    elif tp['type'] == 'ESS':
-                        waytype = "endspeed"
-            else:
-                waytype = "goal"
-                if taskfile_data['goal']['type'] == 'LINE':
-                    shape = "line"
-
-            turnpoint = Turnpoint(tp['waypoint']['lat'], tp['waypoint']['lon'], tp['radius'], waytype, shape, how)
-            turnpoint.name = tp["waypoint"]["name"]
-            turnpoint.rwp_id = wpID
-            turnpoint.num = wpNum
-            self.turnpoints.append(turnpoint)
-
-    def update_from_xctrack_file(self, filename):
-        """Updates Task from xctrack file, which is in json format."""
-        with open(filename, encoding='utf-8') as json_data:
-            # a bit more checking..
-            print("file: ", filename)
-            try:
-                task_data = json.load(json_data)
-            except:
-                print("file is not a valid JSON object")
-                exit()
-        self.update_from_xctrack_data(task_data)
-
     @staticmethod
-    def create_from_xctrack_file(filename):
-        """Creates Task from xctrack file, which is in json format.
-        NEEDS UPDATING BUT WE CAN PROBABLY REMOVE THIS AS THE TASK SHOULD ALWAYS BE CREATED BEFORE IMPORT??
-        """
-        offset = 0
-        task_file = filename
-        turnpoints = []
-        with open(task_file, encoding='utf-8') as json_data:
-            # a bit more checking..
-            print("file: ", task_file)
-            try:
-                t = json.load(json_data)
-            except:
-                print("file is not a valid JSON object")
-                exit()
+    def update_from_dict(task_id: int, data: dict):
+        """ Creates Task from dict
+            usually results from file imports"""
 
-        startopenzulu = t['sss']['timeGates'][0]
-        deadlinezulu = t['goal']['deadline']
-        task_type = 'race' if t['sss']['type'].lower() == 'race' else 'elapsed time'
+        task = Task.read(task_id=task_id)
 
-        startzulu_split = startopenzulu.split(":")  # separate hours, minutes and seconds.
-        deadlinezulu_split = deadlinezulu.split(":")  # separate hours, minutes and seconds.
+        ''' get task info'''
+        for key, value in data.items():
+            if hasattr(task, key):
+                if task.time_offset != 0 and any(s in key for s in ('_time', '_deadline')):
+                    value -= task.time_offset
+                setattr(task, key, value)
 
-        start_time = (int(startzulu_split[0]) + offset) * 3600 + int(startzulu_split[1]) * 60
-        task_deadline = (int(deadlinezulu_split[0]) + offset) * 3600 + int(deadlinezulu_split[1]) * 60
+        ''' get route'''
+        task.turnpoints = []
+        task.partial_distance = []
 
-        for tp in t['turnpoints'][:-1]:  # loop through all waypoints except last one which is always goal
-            waytype = "waypoint"
-            shape = "circle"
-            how = "entry"  # default entry .. looks like xctrack doesn't support exit cylinders apart from SSS
+        for idx, tp in enumerate(data['route'], 1):
+            '''creating waypoints'''
+            # I could take them from database, but this is the only way to be sure it is the correct one
+            turnpoint = Turnpoint(tp['lat'], tp['lon'], tp['radius'], tp['type'], tp['shape'], tp['how'])
 
-            if 'type' in tp:
-                if tp['type'] == 'TAKEOFF':
-                    waytype = "launch"  # live
-                    # waytype = "start"  #aws
-                    how = "exit"
-                if tp['type'] == 'SSS':
-                    waytype = "speed"
-                    if t['sss']['direction'] == "EXIT":  # get the direction form the SSS section
-                        how = "exit"
-                if tp['type'] == 'ESS':
-                    waytype = "endspeed"
-            turnpoint = Turnpoint(tp['waypoint']['lat'], tp['waypoint']['lon'], tp['radius'], waytype, shape, how)
-            turnpoints.append(turnpoint)
+            turnpoint.name = tp['name']
+            turnpoint.num = idx
+            turnpoint.description = tp['description']
+            turnpoint.altitude = tp['altitude']
+            task.turnpoints.append(turnpoint)
 
-        # goal - last turnpoint
-        tp = t['turnpoints'][-1]
-        waytype = "goal"
-        if t['goal']['type'] == 'LINE':
-            shape = "line"
-
-        turnpoint = Turnpoint(tp['waypoint']['lat'], tp['waypoint']['lon'], tp['radius'], waytype, shape, how)
-        turnpoints.append(turnpoint)
-
-        task = Task(turnpoints, start_time, task_deadline, task_type)
+        # calculate task distances
+        task.calculate_task_length()
         task.calculate_optimised_task_length()
+        # save to db
+        task.update_task_info()
+        task.to_db()
+
+        # update map
+        write_map_json(task_id)
 
         return task
 

@@ -400,12 +400,12 @@ $('#cancel_task_confirmed').click(function(){
   });
 });
 
-$('#XCTrack_button').click(function(){
-  $('#XCTrack_fileupload').click();
+$('#task_file_button').click(function(){
+  $('#task_fileupload').click();
 });
 
 $(function () {
-  $('#XCTrack_fileupload').fileupload({
+  $('#task_fileupload').fileupload({
     dataType: 'json',
     done: function (e, data) {
       $.each(data.result.files, function (index, file) {
@@ -415,8 +415,9 @@ $(function () {
     submit: function (e, data){
       $('#upload_box').hide();
     },
-    success: function () {
-      get_turnpoints();
+    success: function (response) {
+      if ( response.success ) window.location.reload(true);
+      else create_flashed_message('Error trying to import task from file.', 'danger');
     }
   });
 });

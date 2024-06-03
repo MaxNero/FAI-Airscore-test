@@ -1202,22 +1202,15 @@ def _get_xcontest_tracks(taskid: int):
         return jsonify(success=True)
 
 
-@blueprint.route('/_upload_XCTrack/<int:taskid>', methods=['POST'])
+@blueprint.route('/_upload_task/<int:taskid>', methods=['POST'])
 @login_required
-def _upload_XCTrack(taskid: int):
-    """takes an upload of an xctrack task file and processes it and saves the task to the DB"""
+def _upload_task(taskid: int):
+    """takes an upload of an xctrack / task creator task file and processes it and saves the task to the DB"""
     if request.method == "POST":
         if request.files:
-            task_file = json.load(request.files["track_file"])
-            task = Task.read(taskid)
-            task.update_from_xctrack_data(task_file)
-            task.calculate_optimised_task_length()
-            task.calculate_task_length()
-            task.update_task_info()
-            task.to_db()
-            write_map_json(taskid)
+            success = frontendUtils.get_task_from_file(taskid, request.files["track_file"])
 
-            resp = jsonify(success=True)
+            resp = jsonify(success=success)
             return resp
 
 
