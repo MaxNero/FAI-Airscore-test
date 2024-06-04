@@ -94,7 +94,7 @@
           <a href="{{ url_for('public.tracks', taskid=task.id) }}" class='btn btn-primary'>Tracks Status</a>
         </p>
         {%  endif %}
-        {% elif task.status is not in ["Task not set", "CANCELLED"] %}
+        {% elif task.status is not in ['Task not set', 'CANCELLED', 'STOPPED / NOT VALID'] %}
         <p>
           <a href="{{ url_for('public.download_file', filetype='igc_zip', filename=task.id) }}">IGC Zip File</a>
         </p>
