@@ -392,7 +392,8 @@ def competition(compid: int):
                     '''tracks download status'''
                     task['tracks_status'] = frontendUtils.task_has_valid_results(task['id'])
             if task['cancelled']:
-                task['status'] = "CANCELLED"
+                # it could be cancelled or stopped but not valid
+                task['status'] = "CANCELLED" if not task['stopped_time'] else "STOPPED / NOT VALID"
 
             all_tasks.append(task)
     all_tasks.sort(key=lambda k: k['date'], reverse=True)
