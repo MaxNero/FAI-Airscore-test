@@ -67,6 +67,8 @@ def tot_lc_calc(res, t):
         if not hasattr(t.formula, 'matrix') or not t.formula.matrix:
             # creating matrix
             t.formula.matrix = lclib.weightedarea.weight_matrix()
+        if not hasattr(t.formula, 'slice_dist') or not t.formula.slice_dist:
+            # adding parameters
             t.formula.slice_dist = t.SS_distance / 1000 / len(t.formula.matrix)
         return lclib.weightedarea.tot_lc_calculation_integrate(res, t)
     elif t.formula.lc_formula == 'weighted':
