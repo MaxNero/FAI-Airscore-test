@@ -460,19 +460,20 @@ class CompResult(object):
     def to_html(json_file: str) -> (str, dict or list):
         """ create a HTML file from json result file"""
         import re
-
         from frontendUtils import get_pretty_data
 
         res = get_pretty_data(open_json_file(json_file), export=True)
         comp_name = f"{res['info']['comp_name']}"
         rankings = res['rankings']
+        formula = res['formula']
+
         if len(res['rankings']) > 1:
             zipfile = f"{re.sub(r'[ ,.-]', '_', comp_name)}_after_{res['tasks'][-1]['task_code']}.zip"
         else:
             zipfile = False
 
         '''Tasks table'''
-        tasks = []
+        tbody = []
         thead = [' ', ' ', 'Dist.', 'Validity']
         right_align = [2, 3]
         for t in res['tasks']:
@@ -482,8 +483,8 @@ class CompResult(object):
                 t['opt_dist'],
                 t['ftv_validity'] if res['formula']['overall_validity'] == 'ftv' else t['day_quality'],
             ]
-            tasks.append(row)
-        tasks = dict(title='Tasks', css_class='simple', right_align=right_align, thead=thead, tbody=tasks)
+            tbody.append(row)
+        tasks = dict(title='Tasks', css_class='simple', right_align=right_align, thead=thead, tbody=tbody)
 
         '''Main results table'''
         thead = ['#', 'Id', 'Name', 'Nat', 'Glider', 'Sponsor', 'Total']
