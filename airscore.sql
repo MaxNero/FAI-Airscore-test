@@ -43,6 +43,8 @@ CREATE TABLE `CompObjectView` (
 ,`self_register` tinyint(1)
 ,`check_g_record` tinyint(1)
 ,`track_source` varchar(40)
+,`ext_server_id` int
+,`ext_server_token` varchar(255)
 ,`formula_name` varchar(50)
 ,`overall_validity` enum('ftv','all','round')
 ,`validity_param` decimal(4,3)
@@ -279,6 +281,8 @@ CREATE TABLE `TaskObjectView` (
 ,`openair_file` varchar(40)
 ,`cancelled` tinyint(1)
 ,`track_source` varchar(40)
+,`ext_server_id` int
+,`ext_server_token` varchar(255)
 ,`task_path` varchar(40)
 ,`comp_path` varchar(40)
 ,`igc_config_file` varchar(80)
@@ -364,7 +368,6 @@ CREATE TABLE `tblCompetition` (
   `openair_file` varchar(40) DEFAULT NULL,
   `comp_type` enum('RACE','Route','Team-RACE') DEFAULT 'RACE',
   `restricted` tinyint(1) NOT NULL DEFAULT '1',
-  `track_source` varchar(40) DEFAULT NULL,
   `stylesheet` varchar(128) DEFAULT NULL,
   `locked` tinyint(1) DEFAULT '0',
   `external` int(2) NOT NULL DEFAULT '0',
@@ -376,6 +379,19 @@ CREATE TABLE `tblCompetition` (
   `self_register` tinyint(1) NOT NULL DEFAULT '0',
   `check_g_record` tinyint(1) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tblCompExtSource`
+--
+
+CREATE TABLE `tblCompExtSource` (
+  `comp_id` int DEFAULT NULL,
+  `track_source` varchar(40) DEFAULT NULL,
+  `ext_server_id` int DEFAULT NULL,
+  `ext_server_token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1148,7 +1164,7 @@ CREATE TABLE `users` (
 --
 DROP TABLE IF EXISTS `CompObjectView`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `CompObjectView`  AS  select `C`.`comp_id` AS `comp_id`,`C`.`comp_name` AS `comp_name`,`C`.`comp_site` AS `comp_site`,`C`.`date_from` AS `date_from`,`C`.`date_to` AS `date_to`,`C`.`MD_name` AS `MD_name`,`C`.`contact` AS `contact`,`C`.`sanction` AS `sanction`,`C`.`comp_type` AS `comp_type`,`C`.`comp_code` AS `comp_code`,`C`.`restricted` AS `restricted`,`C`.`time_offset` AS `time_offset`,`C`.`comp_class` AS `comp_class`,`C`.`openair_file` AS `openair_file`,`C`.`stylesheet` AS `stylesheet`,`C`.`locked` AS `locked`,`C`.`comp_path` AS `comp_path`,`C`.`external` AS `external`,`C`.`website` AS `website`,`C`.`airspace_check` AS `airspace_check`,`C`.`check_launch` AS `check_launch`,`C`.`igc_config_file` AS `igc_config_file`,`C`.`self_register` AS `self_register`,`C`.`check_g_record` AS `check_g_record`,`C`.`track_source` AS `track_source`,`FC`.`formula_name` AS `formula_name`,`FC`.`overall_validity` AS `overall_validity`,`FC`.`validity_param` AS `validity_param`,`FC`.`validity_ref` AS `validity_ref`,`FC`.`nominal_goal` AS `nominal_goal`,`FC`.`min_dist` AS `min_dist`,`FC`.`nominal_dist` AS `nominal_dist`,`FC`.`nominal_time` AS `nominal_time`,`FC`.`nominal_launch` AS `nominal_launch`,`FC`.`formula_distance` AS `formula_distance`,`FC`.`formula_arrival` AS `formula_arrival`,`FC`.`formula_departure` AS `formula_departure`,`FC`.`lead_factor` AS `lead_factor`,`FC`.`formula_time` AS `formula_time`,`FC`.`no_goal_penalty` AS `no_goal_penalty`,`FC`.`glide_bonus` AS `glide_bonus`,`FC`.`tolerance` AS `tolerance`,`FC`.`min_tolerance` AS `min_tolerance`,`FC`.`arr_alt_bonus` AS `arr_alt_bonus`,`FC`.`arr_min_height` AS `arr_min_height`,`FC`.`arr_max_height` AS `arr_max_height`,`FC`.`validity_min_time` AS `validity_min_time`,`FC`.`score_back_time` AS `score_back_time`,`FC`.`max_JTG` AS `max_JTG`,`FC`.`JTG_penalty_per_sec` AS `JTG_penalty_per_sec`,`FC`.`scoring_altitude` AS `scoring_altitude`,`FC`.`task_result_decimal` AS `task_result_decimal`,`FC`.`comp_result_decimal` AS `comp_result_decimal`,`FC`.`team_scoring` AS `team_scoring`,`FC`.`team_size` AS `team_size`,`FC`.`max_team_size` AS `max_team_size`,`FC`.`country_scoring` AS `country_scoring`,`FC`.`country_size` AS `country_size`,`FC`.`max_country_size` AS `max_country_size`,`FC`.`team_over` AS `team_over` from (`tblCompetition` `C` left join `tblForComp` `FC` on((`C`.`comp_id` = `FC`.`comp_id`))) order by (case when (`C`.`comp_name` like '%test%') then `C`.`comp_name` else `C`.`date_to` end) desc ;
+CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `compobjectview` AS select `C`.`comp_id` AS `comp_id`,`C`.`comp_name` AS `comp_name`,`C`.`comp_site` AS `comp_site`,`C`.`date_from` AS `date_from`,`C`.`date_to` AS `date_to`,`C`.`MD_name` AS `MD_name`,`C`.`contact` AS `contact`,`C`.`sanction` AS `sanction`,`C`.`comp_type` AS `comp_type`,`C`.`comp_code` AS `comp_code`,`C`.`restricted` AS `restricted`,`C`.`time_offset` AS `time_offset`,`C`.`comp_class` AS `comp_class`,`C`.`openair_file` AS `openair_file`,`C`.`stylesheet` AS `stylesheet`,`C`.`locked` AS `locked`,`C`.`comp_path` AS `comp_path`,`C`.`external` AS `external`,`C`.`website` AS `website`,`C`.`airspace_check` AS `airspace_check`,`C`.`check_launch` AS `check_launch`,`C`.`igc_config_file` AS `igc_config_file`,`C`.`self_register` AS `self_register`,`C`.`check_g_record` AS `check_g_record`,`E`.`track_source` AS `track_source`,`E`.`ext_server_id` AS `ext_server_id`,`E`.`ext_server_token` AS `ext_server_token`,`FC`.`formula_name` AS `formula_name`,`FC`.`overall_validity` AS `overall_validity`,`FC`.`validity_param` AS `validity_param`,`FC`.`validity_ref` AS `validity_ref`,`FC`.`nominal_goal` AS `nominal_goal`,`FC`.`min_dist` AS `min_dist`,`FC`.`nominal_dist` AS `nominal_dist`,`FC`.`nominal_time` AS `nominal_time`,`FC`.`nominal_launch` AS `nominal_launch`,`FC`.`formula_distance` AS `formula_distance`,`FC`.`formula_arrival` AS `formula_arrival`,`FC`.`formula_departure` AS `formula_departure`,`FC`.`lead_factor` AS `lead_factor`,`FC`.`formula_time` AS `formula_time`,`FC`.`no_goal_penalty` AS `no_goal_penalty`,`FC`.`glide_bonus` AS `glide_bonus`,`FC`.`tolerance` AS `tolerance`,`FC`.`min_tolerance` AS `min_tolerance`,`FC`.`arr_alt_bonus` AS `arr_alt_bonus`,`FC`.`arr_min_height` AS `arr_min_height`,`FC`.`arr_max_height` AS `arr_max_height`,`FC`.`validity_min_time` AS `validity_min_time`,`FC`.`score_back_time` AS `score_back_time`,`FC`.`max_JTG` AS `max_JTG`,`FC`.`JTG_penalty_per_sec` AS `JTG_penalty_per_sec`,`FC`.`scoring_altitude` AS `scoring_altitude`,`FC`.`task_result_decimal` AS `task_result_decimal`,`FC`.`comp_result_decimal` AS `comp_result_decimal`,`FC`.`team_scoring` AS `team_scoring`,`FC`.`team_size` AS `team_size`,`FC`.`max_team_size` AS `max_team_size`,`FC`.`country_scoring` AS `country_scoring`,`FC`.`country_size` AS `country_size`,`FC`.`max_country_size` AS `max_country_size`,`FC`.`team_over` AS `team_over` from ((`tblCompetition` `C` left join `tblCompExtSource` `E` on((`C`.`comp_id` = `E`.`comp_id`))) left join `tblForComp` `FC` on((`C`.`comp_id` = `FC`.`comp_id`))) order by (case when (`C`.`comp_name` like '%test%') then `C`.`comp_name` else `C`.`date_to` end) desc ;
 
 -- --------------------------------------------------------
 
@@ -1184,7 +1200,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `TaskF
 --
 DROP TABLE IF EXISTS `TaskObjectView`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `TaskObjectView`  AS  select `T`.`task_id` AS `task_id`,`C`.`comp_code` AS `comp_code`,`C`.`comp_name` AS `comp_name`,`C`.`comp_site` AS `comp_site`,`T`.`time_offset` AS `time_offset`,`C`.`comp_class` AS `comp_class`,`T`.`comp_id` AS `comp_id`,`T`.`date` AS `date`,`T`.`task_name` AS `task_name`,`T`.`task_num` AS `task_num`,`T`.`reg_id` AS `reg_id`,`T`.`training` AS `training`,`R`.`description` AS `region_name`,`T`.`window_open_time` AS `window_open_time`,`T`.`task_deadline` AS `task_deadline`,`T`.`window_close_time` AS `window_close_time`,`T`.`check_launch` AS `check_launch`,`T`.`start_time` AS `start_time`,`T`.`SS_interval` AS `SS_interval`,`T`.`start_iteration` AS `start_iteration`,`T`.`start_close_time` AS `start_close_time`,`T`.`stopped_time` AS `stopped_time`,`T`.`task_type` AS `task_type`,`T`.`distance` AS `distance`,`T`.`opt_dist` AS `opt_dist`,`T`.`opt_dist_to_SS` AS `opt_dist_to_SS`,`T`.`opt_dist_to_ESS` AS `opt_dist_to_ESS`,`T`.`SS_distance` AS `SS_distance`,`T`.`QNH` AS `QNH`,`T`.`comment` AS `comment`,`T`.`locked` AS `locked`,`T`.`airspace_check` AS `airspace_check`,`T`.`openair_file` AS `openair_file`,`T`.`cancelled` AS `cancelled`,`C`.`track_source` AS `track_source`,`T`.`task_path` AS `task_path`,`C`.`comp_path` AS `comp_path`,`C`.`igc_config_file` AS `igc_config_file` from ((`tblTask` `T` join `tblCompetition` `C` on((`T`.`comp_id` = `C`.`comp_id`))) left join `tblRegion` `R` on((`T`.`reg_id` = `R`.`reg_id`))) order by `T`.`date` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `taskobjectview` AS select `T`.`task_id` AS `task_id`,`C`.`comp_code` AS `comp_code`,`C`.`comp_name` AS `comp_name`,`C`.`comp_site` AS `comp_site`,`T`.`time_offset` AS `time_offset`,`C`.`comp_class` AS `comp_class`,`T`.`comp_id` AS `comp_id`,`T`.`date` AS `date`,`T`.`task_name` AS `task_name`,`T`.`task_num` AS `task_num`,`T`.`reg_id` AS `reg_id`,`T`.`training` AS `training`,`R`.`description` AS `region_name`,`T`.`window_open_time` AS `window_open_time`,`T`.`task_deadline` AS `task_deadline`,`T`.`window_close_time` AS `window_close_time`,`T`.`check_launch` AS `check_launch`,`T`.`start_time` AS `start_time`,`T`.`SS_interval` AS `SS_interval`,`T`.`start_iteration` AS `start_iteration`,`T`.`start_close_time` AS `start_close_time`,`T`.`stopped_time` AS `stopped_time`,`T`.`task_type` AS `task_type`,`T`.`distance` AS `distance`,`T`.`opt_dist` AS `opt_dist`,`T`.`opt_dist_to_SS` AS `opt_dist_to_SS`,`T`.`opt_dist_to_ESS` AS `opt_dist_to_ESS`,`T`.`SS_distance` AS `SS_distance`,`T`.`QNH` AS `QNH`,`T`.`comment` AS `comment`,`T`.`locked` AS `locked`,`T`.`airspace_check` AS `airspace_check`,`T`.`openair_file` AS `openair_file`,`T`.`cancelled` AS `cancelled`,`E`.`track_source` AS `track_source`,`E`.`ext_server_id` AS `ext_server_id`,`E`.`ext_server_token` AS `ext_server_token`,`T`.`task_path` AS `task_path`,`C`.`comp_path` AS `comp_path`,`C`.`igc_config_file` AS `igc_config_file` from (((`tblTask` `T` join `tblCompetition` `C` on((`T`.`comp_id` = `C`.`comp_id`))) left join `tblCompExtSource` `E` on((`T`.`comp_id` = `E`.`comp_id`))) left join `tblRegion` `R` on((`T`.`reg_id` = `R`.`reg_id`))) order by `T`.`date` ;
 
 -- --------------------------------------------------------
 

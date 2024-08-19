@@ -62,6 +62,8 @@ class CompObjectView(BaseModel):
         Column('igc_config_file', String(80)),
         Column('self_register', TINYINT(1), server_default=text("'0'")),
         Column('track_source', String(40)),
+        Column('ext_server_id', INTEGER(11)),
+        Column('ext_server_token', String(255)),
         Column('formula_name', String(50)),
         Column('overall_validity', Enum('ftv', 'all', 'round'), server_default=text("'ftv'")),
         Column('validity_param', NUMERIC(precision=4, asdecimal=False), server_default=text("'0.750'")),
@@ -293,6 +295,8 @@ class TaskObjectView(BaseModel):
         Column('openair_file', String(40)),
         Column('cancelled', TINYINT(1), server_default=text("'0'")),
         Column('track_source', String(40)),
+        Column('ext_server_id', INTEGER(11)),
+        Column('ext_server_token', String(255)),
         Column('task_path', String(40)),
         Column('comp_path', String(40)),
         Column('igc_config_file', String(80)),
@@ -515,6 +519,15 @@ TblUserSession = Table(
 )
 
 
+class TblCompExtSource(BaseModel):
+    __tablename__ = 'tblCompExtSource'
+
+    comp_id = Column(INTEGER(11), ForeignKey('tblCompetition.comp_id'), primary_key=True)
+    track_source = Column(String(40))
+    ext_server_id = Column(INTEGER(11))
+    ext_server_token = Column(String(255))
+
+
 class TblXContestCode(BaseModel):
     __tablename__ = 'tblXContestCodes'
 
@@ -548,7 +561,6 @@ class TblCompetition(BaseModel):
     openair_file = Column(String(40))
     comp_type = Column(Enum('RACE', 'Route', 'Team-RACE'), server_default=text("'RACE'"))
     restricted = Column(TINYINT(1), server_default=text("'1'"))
-    track_source = Column(String(40))
     stylesheet = Column(String(128))
     locked = Column(TINYINT(1), server_default=text("'0'"))
     external = Column(INTEGER(2), nullable=False, server_default=text("'0'"))
