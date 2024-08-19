@@ -105,6 +105,9 @@ class LiveTask(Task):
     """Task from task, with methods to get LiveResult Obj instead of FlightResult"""
     def __init__(self, **kwargs):
 
+        self.ext_server_id = None
+        self.ext_server_token = None
+
         super().__init__(**kwargs)
 
     def get_results(self):
@@ -622,7 +625,7 @@ class LiveTracking(object):
             save_livetrack_result(p, self.task, self.airspace)
 
 
-def get_livetracks(task: Task, pilots: list, timestamp, interval: int = default_interval):
+def get_livetracks(task: LiveTask, pilots: list, timestamp, interval: int = default_interval):
     """Requests live tracks fixes to Livetracking Server
     Flymaster gives back chunks of 100 fixes for each live_id"""
     import jsonpickle
@@ -642,7 +645,9 @@ def get_livetracks(task: Task, pilots: list, timestamp, interval: int = default_
             else:
                 last_time = int(time.mktime(task.date.timetuple()) + (p.last_time or task.window_open_time))
             request[live] = last_time
-        url = FM_LIVE + str(jsonpickle.encode(request))
+        grp = task.ext_server_id
+        token = task.ext_server_token
+        url = FM_LIVE + f"grp={grp}&token={token}&trackers={jsonpickle.encode(request)}"
         if request:
             try:
                 response = requests.get(url)

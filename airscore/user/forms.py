@@ -216,6 +216,11 @@ class CompForm(FlaskForm):
     track_sources = list_track_sources()
     track_source = SelectField('Track Source', choices=track_sources, id='select_source',
                                default=None, description='Select Tracks source if available')
+    ext_server_id = IntegerField('Group ID', default=None,
+                                 validators=[Optional(strip_whitespace=True), NumberRange(min=0, max=999999)],
+                                 description="the ID number on the left of the Flymaster group name")
+    ext_server_token = StringField('API Token', default=None,
+                                   description="the API token in the Flymaster group details")
 
     formulas = list_formulas()
     formula = SelectField('Formula', choices=[(x, x.upper()) for x in formulas['ALL']], id='select_formula')

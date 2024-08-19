@@ -450,6 +450,8 @@ def comp_settings_admin(compid: int):
             comp.date_to = compform.date_to.data
             comp.MD_name = compform.MD_name.data
             comp.track_source = compform.track_source.data if compform.track_source.data not in ('', None) else None
+            comp.ext_server_id = compform.ext_server_id.data if compform.track_source.data not in ('', None) else None
+            comp.ext_server_token = compform.ext_server_token.data if compform.track_source.data not in ('', None) else None
             comp.time_offset = compform.time_offset.data
             comp.restricted = compform.pilot_registration.data
             comp.locked = compform.locked.data
@@ -523,6 +525,8 @@ def comp_settings_admin(compid: int):
         compform.date_to.data = comp.date_to
         compform.MD_name.data = comp.MD_name
         compform.track_source.data = comp.track_source
+        compform.ext_server_id.data = comp.ext_server_id
+        compform.ext_server_token.data = comp.ext_server_token
         compform.time_offset.data = int(comp.time_offset)
         compform.pilot_registration.data = comp.restricted
         compform.formula.data = formula.formula_name

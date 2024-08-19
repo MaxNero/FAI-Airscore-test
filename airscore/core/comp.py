@@ -22,7 +22,7 @@ from compUtils import (
     get_tasks_result_files
 )
 from db.conn import db_session
-from db.tables import TblCompetition
+from db.tables import TblCompetition, TblCompExtSource
 from Defines import PILOT_DB, RESULTDIR, SELF_REG_DEFAULT, TRACKDIR
 from formula import Formula
 from pilot.participant import Participant
@@ -100,6 +100,8 @@ class Comp(object):
         )  # set to true if we have pilot DB on and self reg on by default
         self.check_g_record = check_g_record
         self.track_source = track_source  # external tracks source (flymaster, xcontest, ...)
+        self.ext_server_id = None  # int
+        self.ext_server_token = None  # str
 
         # self.formula                    = Formula.read(self.comp_id) if self.comp_id else None
 
@@ -284,6 +286,9 @@ class Comp(object):
                 db.add(row)
                 db.flush()
                 self.comp_id = row.comp_id
+            row = TblCompExtSource.from_obj(self)
+            row.save_or_update()
+
             db.commit()
         return self.comp_id
 
