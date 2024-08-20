@@ -654,7 +654,7 @@ class FSDB(object):
                     tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
                     tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
                     for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
-                        team_pilots = sorted([p for p in results['data'] if p['team'].lower() == team['name'].lower()], key=lambda k: k['score'], reverse = 1)
+                        team_pilots = sorted([p for p in results['data'] if p['nat'].lower() == team['code'].lower()], key=lambda k: k['score'], reverse = 1)
                         print(f"Team: {team['name']} | pilots: {[p['name'] for p in team_pilots]}")
                         t = ET.SubElement(tr, 'FsTeam')
                         t.set('rank', str(idx))

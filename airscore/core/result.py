@@ -1245,7 +1245,7 @@ def get_comp_country_scoring(filename):
 
     # '''manage rankings'''
 
-    return {'data': pilots, 'info': data['info'], 'tasks': data['tasks'],
+    return {'teams': teams, 'data': pilots, 'info': data['info'], 'tasks': data['tasks'],
             'formula': data['formula'], 'stats': data['stats'], 'rankings': rankings}
 
 
