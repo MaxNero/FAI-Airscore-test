@@ -615,6 +615,7 @@ class FSDB(object):
             if formula.team_scoring or formula.country_scoring:
                 '''FsTeamResults'''
                 teamresults = ET.SubElement(comp, 'FsTeamResults')
+                filename = get_comp_json_filename(self.comp.comp_id)
                 if formula.team_scoring:
                     filename = get_comp_json_filename(self.comp.comp_id)
                     results = get_comp_team_scoring(filename)
