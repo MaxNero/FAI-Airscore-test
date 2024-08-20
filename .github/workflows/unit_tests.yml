@@ -17,6 +17,6 @@ jobs:
     - name: add defines.yaml
       run: mv defines.yaml.example defines.yaml
     - name: Build the Docker image
-      run: docker-compose -f docker-compose-tests.yml build
+      run: docker compose -f docker-compose-tests.yml build
     - name: Run tests
-      run: docker-compose -f docker-compose-tests.yml run --rm tests test
+      run: docker compose -f docker-compose-tests.yml run --rm tests test
