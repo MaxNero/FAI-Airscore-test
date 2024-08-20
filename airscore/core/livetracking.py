@@ -689,11 +689,11 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
             continue
         if not pil.first_time and not pilot_is_airborne(fixes):
             '''did not take off yet'''
-            # print(f"{pil.name}: first_time {pil.first_time} - did not took off yet")
-            pil.last_time = int(fixes[-1]['d']) - midnight
-            pil.live_comment = 'not flying'
-            pil.livetrack = []
-            continue
+            print(f"*** Pilot {pil.ID} did not took off yet")
+            # pil.last_time = int(fixes[-1]['d']) - midnight
+            # pil.live_comment = 'not flying'
+            # pil.livetrack = []
+            # continue
         flight = []
         # print(f"{pil.name}: first_time {pil.first_time} - adding fixes to pilot object")
         # print(f"Fixes to add: {len(fixes)}")
