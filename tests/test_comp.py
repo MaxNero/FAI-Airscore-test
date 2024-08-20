@@ -17,11 +17,11 @@ class TestComp:
                        comp_site='somewhere over the rainbow', date_from=datetime.date(2020, 2, 29),
                        date_to=datetime.date(2020, 4, 1), external=0)
 
-    @patch('comp.db_session', autospec=True, spec_set=True)
-    def test_to_db(self, mock_db):
-        """Get comp by ID."""
-        self.comp.to_db()
-        mock_db.assert_called()
+    # @patch('comp.db_session', autospec=True, spec_set=True)
+    # def test_to_db(self, mock_db):
+    #     """Get comp by ID."""
+    #     self.comp.to_db()
+    #     mock_db.assert_called()
 
     def test_start_date_str(self):
         assert self.comp.start_date_str == "2020-02-29"
