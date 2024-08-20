@@ -641,7 +641,7 @@ def get_livetracks(task: LiveTask, pilots: list, timestamp, interval: int = defa
             '''get epoch time'''
             if not p.first_time:
                 '''pilot not launched yet'''
-                last_time = timestamp - interval
+                last_time = timestamp - 2 * interval
             else:
                 last_time = int(time.mktime(task.date.timetuple()) + (p.last_time or task.window_open_time))
             request[live] = last_time
