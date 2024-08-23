@@ -3,6 +3,7 @@ USE airscore
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
+SET GLOBAL host_cache_size = 0;
 SET time_zone = "+00:00";
 SET NAMES utf8mb4;
 
