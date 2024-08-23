@@ -1,9 +1,11 @@
 """
 Code to get live tracking tracks chunks and calculate live results
 Web interrogation:
-https://lt.flymaster.net/wlb/getLiveData.php?trackers={“176399":1559779200,”177485":1557549310}
+https://lt.flymaster.net/wlb/getLiveData.php?grp=123456&token=a1b2c3d4c5&trackers={“176399":1559779200,”177485":1557549310}
 
-where 176399 is the tracker serial number, and 1559779200 is unixtime stamp of the fixes,  100 fixes will be sent.
+where:
+123456 is the group number on flymaster server, a1b2c3d4c5 is the API token of the group,
+176399 is the tracker serial number, and 1559779200 is unixtime stamp of the fixes,  100 fixes will be sent.
 
 result will be a json array:
 
@@ -52,8 +54,16 @@ class LiveFix(GNSSFix):
         self.height = height
         self.speed = speed
 
-        super().__init__(rawtime=rawtime, lat=lat, lon=lon, validity='A',
-                         press_alt=press_alt, gnss_alt=gnss_alt, index=index, extras='')
+        super().__init__(
+            rawtime=rawtime,
+            lat=lat,
+            lon=lon,
+            validity='A',
+            press_alt=press_alt,
+            gnss_alt=gnss_alt,
+            index=index,
+            extras=''
+        )
 
 
 class LiveResult(FlightResult):
@@ -95,8 +105,13 @@ class LiveResult(FlightResult):
         result['suspect_landing_fix'] = None
         if self.suspect_landing_fix:
             f = self.suspect_landing_fix
-            result['suspect_landing_fix'] = dict(rawtime=f.rawtime, lat=f.lat, lon=f.lon, press_alt=f.press_alt,
-                                                 gnss_alt=f.gnss_alt, alt=f.alt, speed=f.speed, index=f.index)
+            result['suspect_landing_fix'] = dict(
+                rawtime=f.rawtime,
+                lat=f.lat, lon=f.lon,
+                press_alt=f.press_alt,
+                gnss_alt=f.gnss_alt, alt=f.alt, speed=f.speed,
+                index=f.index
+            )
 
         return result
 
@@ -375,9 +390,12 @@ class LiveTracking(object):
 
                 if p.suspect_landing_fix:
                     f = p.suspect_landing_fix
-                    result['suspect_landing_fix'] = dict(rawtime=f.rawtime, lat=f.lat, lon=f.lon,
-                                                         press_alt=f.press_alt, gnss_alt=f.gnss_alt,
-                                                         index=f.index)
+                    result['suspect_landing_fix'] = dict(
+                        rawtime=f.rawtime,
+                        lat=f.lat, lon=f.lon,
+                        press_alt=f.press_alt, gnss_alt=f.gnss_alt,
+                        index=f.index
+                    )
                 data.append(result)
         self.result.update(dict(file_stats=file_stats, headers=headers, info=info, route=route, data=data))
         self.create_json_file()
@@ -390,8 +408,8 @@ class LiveTracking(object):
         status = self.result['file_stats']['status']
         if finalise or not status == self.status:
             if finalise:
-                self.result['file_stats']['status'] = f'Livetracking is terminated. ' \
-                                                      f'Provisional Results will be available shortly.'
+                self.result['file_stats']['status'] = 'Livetracking is terminated. ' \
+                                                    'Provisional Results will be available shortly.'
             else:
                 self.result['file_stats']['status'] = self.status
             self.result['headers'] = self.headers
@@ -412,9 +430,12 @@ class LiveTracking(object):
             result['suspect_landing_fix'] = None
             if p.suspect_landing_fix and not p.landing_time:
                 f = p.suspect_landing_fix
-                result['suspect_landing_fix'] = dict(rawtime=f.rawtime, lat=f.lat, lon=f.lon,
-                                                     press_alt=f.press_alt, gnss_alt=f.gnss_alt,
-                                                     index=f.index)
+                result['suspect_landing_fix'] = dict(
+                    rawtime=f.rawtime,
+                    lat=f.lat, lon=f.lon,
+                    press_alt=f.press_alt, gnss_alt=f.gnss_alt,
+                    index=f.index
+                )
         print(f"{result}")
 
     def create_json_file(self):
@@ -689,11 +710,11 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
             continue
         if not pil.first_time and not pilot_is_airborne(fixes):
             '''did not take off yet'''
-            print(f"*** Pilot {pil.ID} did not took off yet")
-            # pil.last_time = int(fixes[-1]['d']) - midnight
-            # pil.live_comment = 'not flying'
-            # pil.livetrack = []
-            # continue
+            print(f"*** Pilot {pil.ID} did not take off yet")
+            pil.last_time = int(fixes[-1]['d']) - midnight
+            pil.live_comment = 'not flying'
+            pil.livetrack = []
+            continue
         flight = []
         # print(f"{pil.name}: first_time {pil.first_time} - adding fixes to pilot object")
         # print(f"Fixes to add: {len(fixes)}")
@@ -724,9 +745,9 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
 def check_livetrack(result: LiveResult, task: LiveTask, airspace: AirspaceCheck = None):
     """Checks a list of LiveFix objects against the task, having previous result.
     Args:
-           result:   a LiveResult object
-           task:     a LiveTask object
-           airspace: a AirspaceCheck object
+        result:   a LiveResult object
+        task:     a LiveTask object
+        airspace: a AirspaceCheck object
     """
     from flightcheck import flightcheck
     from flightcheck.flightpointer import FlightPointer
