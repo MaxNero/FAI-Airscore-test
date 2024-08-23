@@ -1458,7 +1458,7 @@ def unique_filename(filename, filepath):
     return secure_filename(filename)
 
 
-def get_pretty_data(content: dict, export=False) -> dict or str:
+def get_pretty_data(content: dict, result_type=None, export=False) -> dict or str:
     """transforms result json file in human readable data"""
     from result import get_startgates, pretty_format_results
     from calcUtils import get_date
@@ -1467,7 +1467,8 @@ def get_pretty_data(content: dict, export=False) -> dict or str:
         '''time offset'''
         timeoffset = 0 if 'time_offset' not in content['info'].keys() else int(content['info']['time_offset'])
         '''result file type'''
-        result_type = content['file_stats']['result_type']
+        if not result_type:
+            result_type = content['file_stats'].get('result_type')
         '''score decimals'''
         td = (
             0
@@ -2115,7 +2116,7 @@ def publish_all_results(comp_id: int):
         for row in results:
             row.active = 1
     '''update comp result'''
-    Comp.create_results(comp_id, status='Created from FSDB imported results', name_suffix='Overview')
+    Comp.create_results_file(comp_id, status='Created from FSDB imported results', name_suffix='Overview')
 
 
 def update_comp_result(comp_id: int, status: str = None, name_suffix: str = None) -> tuple:
@@ -2123,7 +2124,7 @@ def update_comp_result(comp_id: int, status: str = None, name_suffix: str = None
     from comp import Comp
 
     try:
-        _, ref_id, filename, timestamp = Comp.create_results(comp_id, status=status, name_suffix=name_suffix)
+        _, ref_id, filename, timestamp = Comp.create_results_file(comp_id, status=status, name_suffix=name_suffix)
     except (FileNotFoundError, Exception) as e:
         print(f'Comp results creation error. Probably we miss some task results files?')
         return False, None, None

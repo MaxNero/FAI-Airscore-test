@@ -1183,12 +1183,12 @@ def get_task_country_scoring(filename):
     return {'teams': teams, 'data': pilots, 'info': data['info'], 'formula': data['formula']}
 
 
-def get_comp_country_scoring(filename):
-    """takes a competition result filename and outputs a nested dict ready to be jsonified for the front end
-    each pilot has attributes for their nation and nation score to allow grouping in datatables js.
-    Scores are given html strikethough <del> if they do not count towards nation total
+def calculate_comp_country_scoring(data: dict) -> dict or None:
+    """ takes a competition result dict object and outputs a nested dict ready to be jsonified for the front end
+        each pilot has attributes for their nation and nation score to allow grouping in datatables js.
+        Scores are given html strikethough <del> if they do not count towards nation total
     """
-    data = open_json_file(filename)
+
     formula = data['formula']
     if not formula['country_scoring']:
         print(f'Country Scoring is not available')
@@ -1209,8 +1209,6 @@ def get_comp_country_scoring(filename):
     pilots = []
     all_scores = []
 
-    rank = 0
-    prev = None
     for nat in countries:
         nat_pilots = [p for p in data['results'] if p['nat'] == nat['code'] and p['nat_team'] == 1]
         score = 0
@@ -1249,10 +1247,19 @@ def get_comp_country_scoring(filename):
             'formula': data['formula'], 'stats': data['stats'], 'rankings': rankings}
 
 
+def get_comp_country_scoring(filename) -> dict:
+    """ takes a competition result filename and outputs a nested dict ready to be jsonified for the front end
+        each pilot has attributes for their nation and nation score to allow grouping in datatables js.
+        Scores are given html strikethough <del> if they do not count towards nation total
+    """
+    data = open_json_file(filename)
+    return calculate_comp_country_scoring(data)
+
+
 def get_task_team_scoring(filename):
-    """takes a task result filename and outputs a nested dict ready to be jsonified for the front end
-    each pilot has attributes for their nation and nation score to allow grouping in datatables js.
-    Scores are given html strikethough <del> if they do not count towards nation total
+    """ takes a task result filename and outputs a nested dict ready to be jsonified for the front end
+        each pilot has attributes for their nation and nation score to allow grouping in datatables js.
+        Scores are given html strikethough <del> if they do not count towards nation total
     """
     data = open_json_file(filename)
     formula = data['formula']
@@ -1295,15 +1302,15 @@ def get_task_team_scoring(filename):
     return {'teams': teams, 'data': pilots, 'info': data['info'], 'formula': data['formula'], 'stats': data['stats']}
 
 
-def get_comp_team_scoring(filename):
-    """takes a competition result filename and outputs a nested dict ready to be jsonified for the front end
-    each pilot has attributes for their nation and nation score to allow grouping in datatables js.
-    Scores are given html strikethough <del> if they do not count towards nation total
+def calculate_comp_team_scoring(data: dict) -> dict or None:
+    """ takes a competition result dict object and outputs a nested dict ready to be jsonified for the front end
+        each pilot has attributes for their nation and nation score to allow grouping in datatables js.
+        Scores are given html strikethough <del> if they do not count towards nation total
     """
-    data = open_json_file(filename)
+
     formula = data['formula']
     if not formula['team_scoring']:
-        print(f'Team Scoring is not available')
+        print('Team Scoring is not available')
         return None
     '''get info: teams list, team size, task codes'''
     pilots_list = [p for p in data['results'] if not p['team'] in [None, '']]
@@ -1358,3 +1365,12 @@ def get_comp_team_scoring(filename):
         row['group'] = str(sum(map(lambda x: x > row['team_score'], all_scores)) + 1) + row['group']
 
     return {'teams': teams, 'data': pilots, 'info': data['info'], 'tasks': data['tasks'], 'formula': data['formula'], 'stats': data['stats']}
+
+
+def get_comp_team_scoring(filename):
+    """ takes a competition result filename and outputs a nested dict ready to be jsonified for the front end
+        each pilot has attributes for their nation and nation score to allow grouping in datatables js.
+        Scores are given html strikethough <del> if they do not count towards nation total
+    """
+    data = open_json_file(filename)
+    return calculate_comp_team_scoring(data)

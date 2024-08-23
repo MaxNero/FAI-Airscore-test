@@ -160,13 +160,16 @@ class FSDB(object):
         return fsdb.to_file(participants_fsdb=True)
 
     def to_file(self, participants_fsdb: bool = False):
-        """returns:
-        - filename: STR
-        - fsdb:     FSDB xml data, to be used in frontend."""
+        """ returns:
+            - filename: STR
+            - fsdb:     FSDB xml data, to be used in frontend.
+        """
         from frontendUtils import get_pretty_data
         from compUtils import get_comp_json, get_comp_json_filename
-        from task import get_task_json
-        from result import get_comp_team_scoring, get_comp_country_scoring
+        from task import get_task_json, get_task_json_filename
+        from result import get_task_team_scoring, get_task_country_scoring, \
+                        get_comp_team_scoring, get_comp_country_scoring, \
+                        calculate_comp_country_scoring, calculate_comp_team_scoring
 
         formula = self.comp.formula
         pilots = self.comp.participants
@@ -278,10 +281,10 @@ class FSDB(object):
             '''FsTasks'''
             task_ids = dict()
             tasks = ET.SubElement(comp, 'FsTasks')
-            for idx, t in enumerate(self.tasks):
+            for num, t in enumerate(self.tasks, start=1):
                 task = ET.SubElement(tasks, 'FsTask')
-                task.set('id', str(idx + 1))
-                task_ids[idx+1] = t.task_code
+                task.set('id', str(num))
+                task_ids[num] = t.task_code
                 task.set('name', t.task_name)
                 task.set('tracklog_folder', '')
 
@@ -559,7 +562,7 @@ class FSDB(object):
                     rank_id = el['rank_id']
                     taskresult = ET.SubElement(task_tr, 'FsTaskResult')
                     taskresult.set('id', str(el['rank_name']).lower())
-                    taskresult.set('title', el['rank_name'])
+                    taskresult.set('title', f"{t.task_name} {el['rank_name']}")
                     taskresult.set('ts', '')
                     taskresult.set('result_pattern', ('#0.0' if formula.task_result_decimal == 1 else '#0'))
                     scorep = ET.SubElement(taskresult, 'FsTaskScoreParams')
@@ -586,90 +589,152 @@ class FSDB(object):
 
             '''FsCompetitionResults'''
             compresults = ET.SubElement(comp, 'FsCompetitionResults')
-            result = get_pretty_data(get_comp_json(self.comp.comp_id))
-            rankings = result['rankings']
-            r = result['results']
-            for el in rankings:
-                rank_id = el['rank_id']
-                cr = ET.SubElement(compresults, 'FsCompetitionResult')
-                cr.set('id', str(el['rank_name']).lower())
-                cr.set('title', str(el['rank_name']))
-                cr.set('top', 'all')  # ?
-                cr.set('tasks', ';'.join([str(i) for i in task_ids.keys()]))
-                cr.set('ts', '')
-                cr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
-                cr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
-                for p in [x for x in r if x['rankings'][rank_id]]:
-                    pr = ET.SubElement(cr, 'FsParticipant')
-                    pr.set('id', str(p['ID']))
-                    pr.set('points', p['score'].split('>')[1].split('<')[0])
-                    pr.set('rank', str(p['rankings'][rank_id]).split(' ')[0])
-                    res = list(p['results'].items())
-                    for x in res:
-                        pt = ET.SubElement(pr, 'FsTask')
-                        pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0])))
-                        pt.set('points', x[1]['pre'])
-                        pt.set('counting_points', x[1]['score'])
-                        pt.set('counts', '1')
 
+            for num, task in enumerate(self.tasks, start=1):
+                if num == len(self.tasks):
+                    result = get_pretty_data(get_comp_json(self.comp.comp_id))
+                    print(f"n: {num} | {task.task_name} | type {type(result)}")
+                else:
+                    # intermetiate results
+                    result = get_pretty_data(self.comp.calculate_results(task_num=task.task_num), result_type='comp')
+                    print(f"ELSE n: {num} | {task.task_name} | type {type(result)}")
+                    print(result)
+                rankings = result['rankings']
+                r = result['results']
+                for el in rankings:
+                    rank_id = el['rank_id']
+                    cr = ET.SubElement(compresults, 'FsCompetitionResult')
+                    cr.set('id', str(el['rank_name']).lower())
+                    cr.set('title', f"Competition {el['rank_name']} after {task.task_name}")
+                    cr.set('top', 'all')  # ?
+                    cr.set('tasks', ';'.join([str(i) for i in task_ids.keys() if i <= num]))
+                    cr.set('ts', '')
+                    cr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
+                    cr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
+                    for p in [x for x in r if x['rankings'][rank_id]]:
+                        pr = ET.SubElement(cr, 'FsParticipant')
+                        pr.set('id', str(p['ID']))
+                        pr.set('points', p['score'].split('>')[1].split('<')[0])
+                        pr.set('rank', str(p['rankings'][rank_id]).split(' ')[0])
+                        res = list(p['results'].items())
+                        for x in res:
+                            pt = ET.SubElement(pr, 'FsTask')
+                            pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0])))
+                            pt.set('points', x[1]['pre'])
+                            pt.set('counting_points', x[1]['score'])
+                            pt.set('counts', '1')
+
+            '''FsTeamResults'''
             if formula.team_scoring or formula.country_scoring:
-                '''FsTeamResults'''
                 teamresults = ET.SubElement(comp, 'FsTeamResults')
                 filename = get_comp_json_filename(self.comp.comp_id)
-                if formula.team_scoring:
-                    filename = get_comp_json_filename(self.comp.comp_id)
-                    results = get_comp_team_scoring(filename)
-                    tr = ET.SubElement(teamresults, 'FsTeamResult')
-                    tr.set('id', 'team')
-                    tr.set('title', 'Team Results')
-                    tr.set('tasks', ';'.join([str(i) for i in task_ids.keys()]))
-                    tr.set('ts', '')
-                    tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
-                    tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
-                    for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
-                        team_pilots = sorted([p for p in results['data'] if p['team'].lower() == team['name'].lower()], key=lambda k: k['score'], reverse = 1)
-                        print(f"Team: {team['name']} | pilots: {[p['name'] for p in team_pilots]}")
-                        t = ET.SubElement(tr, 'FsTeam')
-                        t.set('rank', str(idx))
-                        t.set('name', str(team['name']))
-                        t.set('points', str(team['score']))
-                        for p in team_pilots:
-                            par = ET.SubElement(t, 'FsParticipant')
-                            par.set('id', str(p['ID']))
-                            res = list(el for el in p['results'].items() if el[0] in task_ids.values())
-                            print(f"res: {res}")
-                            for x in res:
-                                print(f"ID: {x[0]} | items: {task_ids.items()}")
+                for num, task in enumerate(self.tasks, start=1):
+                    if formula.team_scoring:
+                        # task team results
+                        results = get_task_team_scoring(get_task_json_filename(task.task_id))
+                        tr = ET.SubElement(teamresults, 'FsTeamResult')
+                        tr.set('id', 'task_team')
+                        tr.set('title', f"{task.task_name} Team Results")
+                        tr.set('tasks', str(num))
+                        tr.set('ts', '')
+                        tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
+                        tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
+                        for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
+                            team_pilots = [p for p in results['data'] if p['nat'].lower() == team['code'].lower()]  # pilots are already sorted by score
+                            t = ET.SubElement(tr, 'FsTeam')
+                            t.set('rank', str(idx))
+                            t.set('name', str(team['name']))
+                            t.set('points', str(team['score']))
+                            for p in team_pilots:
+                                par = ET.SubElement(t, 'FsParticipant')
+                                par.set('id', str(p['ID']))
                                 pt = ET.SubElement(par, 'FsTask')
-                                pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0]))) 
-                                pt.set('counts', str(x[1]['perf']))
+                                pt.set('id', str(num))
+                                pt.set('counts', '0' if '<del>' in p['score'] else '1')
 
-                if formula.country_scoring:
-                    results = get_comp_country_scoring(filename)
-                    tr = ET.SubElement(teamresults, 'FsTeamResult')
-                    tr.set('id', 'nat_code_3166_a3')
-                    tr.set('title', 'Nations Results')
-                    tr.set('tasks', ';'.join([str(i) for i in task_ids.keys()]))
-                    tr.set('ts', '')
-                    tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
-                    tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
-                    for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
-                        team_pilots = sorted([p for p in results['data'] if p['nat'].lower() == team['code'].lower()], key=lambda k: k['score'], reverse = 1)
-                        print(f"Team: {team['name']} | pilots: {[p['name'] for p in team_pilots]}")
-                        t = ET.SubElement(tr, 'FsTeam')
-                        t.set('rank', str(idx))
-                        t.set('name', str(team['name']))
-                        t.set('points', str(team['score']))
-                        for p in team_pilots:
-                            par = ET.SubElement(t, 'FsParticipant')
-                            par.set('id', str(p['ID']))
-                            res = list(el for el in p['results'].items() if el[0] in task_ids.values())
-                            print(f"res: {res}")
-                            for x in res:
-                                print(f"ID: {x[0]} | items: {task_ids.items()}")
+
+                        # comp team results
+                        if num == len(self.tasks):
+                            results = get_comp_team_scoring(filename)
+                        else:
+                            results = calculate_comp_team_scoring(self.comp.calculate_results(task_num=task.task_num))
+                        tr = ET.SubElement(teamresults, 'FsTeamResult')
+                        tr.set('id', 'comp_team')
+                        tr.set('title', f"Competition Team Results after {task.task_name}")
+                        tr.set('tasks', ';'.join([str(i) for i in task_ids.keys() if i <= num]))
+                        tr.set('ts', '')
+                        tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
+                        tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
+                        for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
+                            team_pilots = [p for p in results['data'] if p['team'].lower() == team['name'].lower()]  # pilots are already sorted by score
+                            print(f"Team: {team['name']} | pilots: {[p['name'] for p in team_pilots]}")
+                            t = ET.SubElement(tr, 'FsTeam')
+                            t.set('rank', str(idx))
+                            t.set('name', str(team['name']))
+                            t.set('points', str(team['score']))
+                            for p in team_pilots:
+                                par = ET.SubElement(t, 'FsParticipant')
+                                par.set('id', str(p['ID']))
+                                res = list(el for el in p['results'].items() if el[0] in task_ids.values())
+                                print(f"res: {res}")
+                                for x in res:
+                                    print(f"ID: {x[0]} | items: {task_ids.items()}")
+                                    pt = ET.SubElement(par, 'FsTask')
+                                    pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0]))) 
+                                    pt.set('counts', str(x[1]['perf']))
+
+                    if formula.country_scoring:
+                        # task nation results
+                        results = get_task_country_scoring(get_task_json_filename(task.task_id))
+                        tr = ET.SubElement(teamresults, 'FsTeamResult')
+                        tr.set('id', 'task_nations')
+                        tr.set('title', f"{task.task_name} Nation Results")
+                        tr.set('tasks', str(num))
+                        tr.set('ts', '')
+                        tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
+                        tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
+                        for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
+                            team_pilots = [p for p in results['data'] if p['nat'].lower() == team['code'].lower()]  # pilots are already sorted by score
+                            t = ET.SubElement(tr, 'FsTeam')
+                            t.set('rank', str(idx))
+                            t.set('name', str(team['name']))
+                            t.set('points', str(team['score']))
+                            for p in team_pilots:
+                                par = ET.SubElement(t, 'FsParticipant')
+                                par.set('id', str(p['ID']))
                                 pt = ET.SubElement(par, 'FsTask')
-                                pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0]))) 
-                                pt.set('counts', str(x[1]['perf']))
+                                pt.set('id', str(num))
+                                pt.set('counts', '0' if '<del>' in p['score'] else '1')
+
+                        # comp nation results
+                        if num == len(self.tasks):
+                            results = get_comp_country_scoring(filename)
+                        else:
+                            results = calculate_comp_country_scoring(self.comp.calculate_results(task_num=task.task_num))
+                        tr = ET.SubElement(teamresults, 'FsTeamResult')
+                        tr.set('id', 'comp_nations')
+                        tr.set('title', f"Competition Nation Results after {task.task_name}")
+                        tr.set('tasks', ';'.join([str(i) for i in task_ids.keys() if i <= num]))
+                        tr.set('ts', '')
+                        tr.set('task_result_pattern', '#0.0' if formula.task_result_decimal == 1 else '#0')
+                        tr.set('comp_result_pattern', '#0.0' if formula.comp_result_decimal == 1 else '#0')
+                        for idx, team in enumerate(sorted(results['teams'], key=lambda k: k['score'], reverse = 1), start=1):
+                            team_pilots = [p for p in results['data'] if p['nat'].lower() == team['code'].lower()]  # pilots are already sorted by score
+                            print(f"Team: {team['name']} | pilots: {[p['name'] for p in team_pilots]}")
+                            t = ET.SubElement(tr, 'FsTeam')
+                            t.set('rank', str(idx))
+                            t.set('name', str(team['name']))
+                            t.set('points', str(team['score']))
+                            for p in team_pilots:
+                                par = ET.SubElement(t, 'FsParticipant')
+                                par.set('id', str(p['ID']))
+                                res = list(el for el in p['results'].items() if el[0] in task_ids.values())
+                                print(f"res: {res}")
+                                for x in res:
+                                    print(f"ID: {x[0]} | items: {task_ids.items()}")
+                                    pt = ET.SubElement(par, 'FsTask')
+                                    pt.set('id', str(next(k for k, v in task_ids.items() if v == x[0]))) 
+                                    pt.set('counts', str(x[1]['perf']))
 
         '''creates the file to store'''
         fsdb = ET.tostring(root, pretty_print=True, xml_declaration=True, encoding='UTF-8')
@@ -793,7 +858,7 @@ class FSDB(object):
                 status='Imported from FSDB',
             )
             print(f' - created file {filename} for {task.task_name}')
-        Comp.create_results(self.comp.comp_id, status='Created from FSDB imported results', name_suffix='Overview')
+        Comp.create_results_file(self.comp.comp_id, status='Created from FSDB imported results', name_suffix='Overview')
 
     def add_all(self):
         print(f"add all FSDB info to database...")

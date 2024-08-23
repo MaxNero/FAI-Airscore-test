@@ -332,6 +332,19 @@ class Comp(object):
         """gets tasks details from database. They could be different from JSON data for scored tasks"""
         return compUtils.get_tasks_details(self.comp_id)
 
+    def get_tasks_from_result_files(self):
+        """creates the Task objects from the active json files for each task"""
+        files = get_tasks_result_files(self.comp_id)
+        if not len(files):
+            print(f"there are no task result files for this comp yet")
+            return
+        self.tasks = []
+        for t in files:
+            print(f"comp get tasks: file {t.file}")
+            task = Task.create_from_json(task_id=t.task_id, filename=t.file)
+            print(f"task is Task? {isinstance(task, Task)} ({type(task)})")
+            self.tasks.append(task)
+
     @staticmethod
     def from_json(comp_id: int, ref_id=None):
         """Reads competition from json result file
@@ -372,78 +385,90 @@ class Comp(object):
                     comp.track_source = 'flymaster'
             return comp
 
-    @staticmethod
-    def create_results(comp_id, status=None, decimals=None, name_suffix=None):
-        """creates the json result file and the database entry
+    def calculate_results(self, task_num=None) -> dict:
+        """ returns the json object of the results
             :param
-        name_suffix: optional name suffix to be used in filename.
-        This is so we can overwrite comp results that are only used in front end to create competition
-         page not display results"""
+            task_num: optional INT to limit the number of considered tasks.
+        """
         from calcUtils import c_round
 
-        comp = Comp.read(comp_id)
-        '''PARAMETER: decimal positions'''
-        if decimals is None or not isinstance(decimals, int):
-            decimals = comp.formula.comp_result_decimal
-        td = comp.formula.task_result_decimal
-        '''retrieve active task result files and reads info'''
-        files = get_tasks_result_files(comp_id)
+        self.results = []
+
         '''initialize obj attributes'''
-        comp.participants = get_participants(comp_id)
-        comp.results.extend(
+        self.participants = get_participants(self.comp_id)
+        self.results.extend(
             [
                 dict(results={}, **{x: getattr(p, x) for x in CompResult.result_list if x in dir(p)})
-                for p in comp.participants
+                for p in self.participants
             ]
         )
         ''' get rankings '''
-        comp.get_rankings()
-        for idx, t in enumerate(files):
-            task = Task.create_from_json(task_id=t.task_id, filename=t.file)
-            comp.tasks.append(task)
+        self.get_rankings()
+
+        '''get tasks'''
+        td = self.formula.task_result_decimal
+        self.get_tasks_from_result_files()
+        if task_num:
+            self.tasks = [e for e in self.tasks if e.task_num <= task_num]
+        for task in self.tasks:
             if task.training:
                 continue
             ''' task validity (if not using ftv, ftv_validity = day_quality)'''
             r = task.ftv_validity * 1000
             '''get pilots result'''
-            for p in comp.results:
+            for p in self.results:
                 s = next((res.score or 0 for res in task.pilots if res.par_id == p['par_id']), 0)
                 perf = c_round(s / r, td + 3)
                 p['results'][task.task_code] = {'pre': c_round(s, td), 'perf': perf, 'score': c_round(s, td)}
 
         '''calculate final score'''
-        comp.get_final_scores(decimals)
+        self.get_final_scores()
         '''create json file'''
-        result = {
-            'info': {x: getattr(comp, x) for x in CompResult.info_list},
-            'rankings': comp.rankings,
-            'tasks': [{x: getattr(t, x) for x in CompResult.task_list} for t in comp.tasks],
-            'results': comp.results,
-            'formula': {x: getattr(comp.formula, x) for x in CompResult.formula_list},
-            'stats': {x: getattr(comp, x) for x in CompResult.stats_list},
+        elements = {
+            'info': {x: getattr(self, x) for x in CompResult.info_list},
+            'rankings': self.rankings,
+            'tasks': [{x: getattr(t, x) for x in CompResult.task_list} for t in self.tasks],
+            'results': self.results,
+            'formula': {x: getattr(self.formula, x) for x in CompResult.formula_list},
+            'stats': {x: getattr(self, x) for x in CompResult.stats_list},
         }
+
+        return elements
+
+    @staticmethod
+    def create_results_file(comp_id, status=None, decimals=None, name_suffix=None):
+        """ creates the json result file and the database entry
+            :param
+            status: optional status to change the default one.
+            decimals: optional INT to change the formula one.
+            name_suffix: optional name suffix to be used in filename.
+            This is so we can overwrite comp results that are only used in front end to create competition
+            page not display results"""
+
+        comp = Comp.read(comp_id)
+        '''PARAMETER: decimal positions'''
+        if decimals is not None and isinstance(decimals, int):
+            comp.formula.comp_result_decimal = decimals
+            comp.formula.task_result_decimal = decimals
+
+        result = comp.calculate_results()
         ref_id, filename, timestamp = create_json_file(
             comp_id=comp.id, task_id=None, code=comp.comp_code, elements=result, status=status, name_suffix=name_suffix
         )
         return comp, ref_id, filename, timestamp
 
-    def get_final_scores(self, cd=0):
-        """calculate final scores depending on overall validity:
-        - all:      sum of all tasks results
-        - round:    task discard every [param] tasks
-        - ftv:      calculate task scores and total score based on FTV [param]
-
-        input:
-            results:    participant list
-            tasks:      tasks list
-            formula:    comp formula dict
-            d:          decimals on single tasks score, default 0
+    def get_final_scores(self):
+        """ calculate final scores depending on overall validity:
+            - all:      sum of all tasks results
+            - round:    task discard every [param] tasks
+            - ftv:      calculate task scores and total score based on FTV [param]
         """
         from calcUtils import c_round
 
         val = self.formula.overall_validity
         param = self.formula.validity_param
         avail_validity = self.avail_validity
+        cd = self.formula.comp_result_decimal
         td = self.formula.task_result_decimal
 
         for pil in self.results:
