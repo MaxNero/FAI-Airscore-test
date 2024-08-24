@@ -53,8 +53,8 @@ function get_internal_pilots() {
         registered.forEach(function(item) {
           $('#lstview_to').append(
             $('<option>', {
-               value: item.pil_id,
-               text: item.name + ' - ' + item.civl_id
+              value: item.pil_id,
+              text: item.name + ' - ' + item.civl_id
             })
           );
           registered_pil.push(item.pil_id);
@@ -154,10 +154,11 @@ function edit_participant(par_id) {
   $('#mod_paid').val(paid);
   $('#modify_confirmed').attr("onclick","save_modified_participant('"+ par_id +"')");
 
-  $('#nat_team').prop("checked", isNotEmpty(data['nat_team']) );
-  $('#mod_team').val(data['team'])
-  $('#mod_xcontest_id').val(data['xcontest_id'])
-  $('#mod_live_id').val(data['live_id'])
+  $('#nat_team').prop("checked", data['nat_team']);
+  $('#nat_team').val(Boolean(data['nat_team']));
+  $('#mod_team').val(data['team']);
+  $('#mod_xcontest_id').val(data['xcontest_id']);
+  $('#mod_live_id').val(data['live_id']);
   $.each( data.custom, (key, value) => $('#attr_'+key).val(value) );
 
   $('#mod_modal').modal('show');
@@ -435,7 +436,7 @@ function confirm_remove_attribute() {
       else {
         create_flashed_message('There was an error trying to delete attribute.', 'danger');
       }
-   }
+    }
   });
 }
 
@@ -484,7 +485,7 @@ function save_custom_attribute() {
       else {
         create_flashed_message('There was an error trying to save attribute.', 'danger');
       }
-   }
+    }
   });
 }
 
