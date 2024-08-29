@@ -899,15 +899,21 @@ def track_result_output(pilot, task_id) -> dict:
             data['Result'] = f'ESS <del>{time}</del> ({c_round(pilot.distance / 1000, 2)} Km)'
         elif pilot.result_type == 'lo':
             data['Result'] = f"LO {c_round(pilot.distance / 1000, 2)} Km"
-        if pilot.track_id:  # if there is a track, make the result a link to the map
+        if pilot.track_id and pilot.track_id > 0:  # if there is a track, make the result a link to the map
             result = data['Result']
             data['Result'] = f'<a href="/map/{pilot.par_id}-{task_id}?back_link=0" target="_blank">{result}</a>'
+        elif pilot.track_id == 0:
+            # there was an error in saving track record. usually altitude out of range during livetracking
+            data['Result'] += f'<a tabindex="0" class="p-1 ml-2" role="button" data-toggle="popover" ' \
+                            f'data-container="body" data-trigger="focus" data-html="true" data-placement="top" ' \
+                            f'title="Warning" data-content="Error saving DB record usually due to bad altitude data">' \
+                            f'<span class="fas fa-exclamation-circle text-warning"></span></a>'
         if pilot.notifications:
             data['notifications'] = f"{'<br />'.join(n.comment for n in pilot.notifications)}"
             data['Result'] += f'<a tabindex="0" class="p-1 ml-2" role="button" data-toggle="popover" ' \
-                              f'data-container="body" data-trigger="focus" data-html="true" data-placement="top" ' \
-                              f'title="Warning" data-content="{data["notifications"]}">' \
-                              f'<span class="fas fa-exclamation-circle text-warning"></span></a>'
+                            f'data-container="body" data-trigger="focus" data-html="true" data-placement="top" ' \
+                            f'title="Warning" data-content="{data["notifications"]}">' \
+                            f'<span class="fas fa-exclamation-circle text-warning"></span></a>'
 
     return data
 

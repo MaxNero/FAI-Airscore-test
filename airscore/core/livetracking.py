@@ -620,12 +620,16 @@ class LiveTracking(object):
                     check_livetrack(result=p, task=self.task, airspace=self.airspace)
                     print(f"after check_livetrack in run")
                     print(f"{p.name} first_time: {p.first_time}, last_time: {p.last_time}, live comment: {p.live_comment}")
-                    if (p.landing_time or p.goal_time) and not p.track_id:
+                    if (p.landing_time or p.goal_time) and p.track_id is None:
                         '''pilot landed or made goal, save track result'''
                         print(f"{p.name} before track saving: {p.result_type}, live comment: {p.live_comment}")
                         save_livetrack_result(p, self.task, self.airspace)
                         valid_results.append(track_result_output(p, self.task.task_id))
-                        print(f"{p.name}: Track saved: track_id: {p.track_id}")
+                        if p.track_id:
+                            print(f"{p.name}: Track saved: track_id: {p.track_id}")
+                        else:
+                            #error saving the db record, usually for altitude out of range
+                            print(f"{p.name}: error saving Track. track_id: {p.track_id}")
                         print(f"result_type: {p.result_type}, live comment: {p.live_comment}")
                         p.live_comment = 'landed'
                     self.update_pilot_result(p)
@@ -961,7 +965,7 @@ def calculate_incremental_results(
         evaluate_infringements(result, notifications)
 
 
-def save_livetrack_result(p: LiveResult, task: LiveTask, airspace: AirspaceCheck = None):
+def save_livetrack_result(p: LiveResult, task: LiveTask, airspace: AirspaceCheck = None) -> bool:
     from pilot.track import Track
     from pilot.flightresult import save_track
 
@@ -971,10 +975,15 @@ def save_livetrack_result(p: LiveResult, task: LiveTask, airspace: AirspaceCheck
         p.check_flight(flight, task, airspace)
         # print(f"Calculated LC: {test.fixed_LC} distance: {test.distance_flown} time: {test.ss_time}")
         # print(f"Difference %: {(test.fixed_LC - p.fixed_LC) / p.fixed_LC * 100}")
-        save_track(p, task.id)
-        p.save_tracklog_map_file(task, flight)
+        try:
+            save_track(p, task.id)
+            p.save_tracklog_map_file(task, flight)
+            return True
+        except Exception as e:
+            print(f"there was an error trying to save pilot ID {p.ID}: {e}")
     else:
         print(f"{p.track_file} is not a valid igc. Result not saved.")
+    return False
 
 
 def get_task_results(task_id: int) -> list:
