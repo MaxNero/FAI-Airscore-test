@@ -1,7 +1,6 @@
 owner: stuartm
 editable: false
-description: standard settings. Ideal for competitions using igc files from flight
-  instruments.-test
+description: standard settings. Ideal for competitions using igc files from flight instruments.
 
 #
 # Flight validation parameters.

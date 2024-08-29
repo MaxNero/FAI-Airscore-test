@@ -1702,7 +1702,6 @@ def igc_parsing_config(filename: str):
     from trackUtils import read_igc_config_yaml, save_igc_config_yaml
     igc_config_form = IgcParsingConfigForm()
     filename += '.yaml'
-    save = True
     config = read_igc_config_yaml(filename)
     if request.method == 'GET':
         if config is None:
@@ -1725,9 +1724,9 @@ def igc_parsing_config(filename: str):
         igc_config_form.min_time_for_bearing_change.data = config['min_time_for_bearing_change']
         igc_config_form.min_time_for_thermal.data = config['min_time_for_thermal']
 
-        if current_user.username == config['owner']:
-            save = True
-    if request.method == 'POST':
+        save = bool(config['editable']) if current_user.username == config['owner'] else False
+
+    elif request.method == 'POST':
         config['description'] = igc_config_form.description.data
         config['min_fixes'] = igc_config_form.min_fixes.data
         config['max_seconds_between_fixes'] = igc_config_form.max_seconds_between_fixes.data
@@ -1746,16 +1745,24 @@ def igc_parsing_config(filename: str):
         config['min_time_for_bearing_change'] = igc_config_form.min_time_for_bearing_change.data
         config['min_time_for_thermal'] = igc_config_form.min_time_for_thermal.data
         config['owner'] = current_user.username
-        if igc_config_form.save.data and current_user.username == config['owner']:
-            save_igc_config_yaml(filename, config)
-            flash("saved", category='info')
+        config['editable'] = True
+        if igc_config_form.save.data:
+            if not config['editable']:
+                flash("the file is read only", category='danger')
+            elif not current_user.username == config['owner']:
+                flash("you are not the owner of this file", category='danger')
+            else:
+                save_igc_config_yaml(filename, config)
+                flash("saved", category='info')
+                return jsonify(success=True)
         if igc_config_form.save_as.data and igc_config_form.new_name.data:
-            save_igc_config_yaml(igc_config_form.new_name.data + '.yaml', config)
-            flash("saved as " + igc_config_form.new_name.data, category='info')
-            return render_template('users/igc_parsing_settings.html', save=save, name=filename,
-                                   description=config['description'], configform=igc_config_form)
+            new_filename = igc_config_form.new_name.data + '.yaml'
+            save_igc_config_yaml(new_filename, config)
+            flash("saved as " + new_filename, category='info')
+            return render_template('users/igc_parsing_settings.html', save=config['editable'], name=new_filename[:-5],
+                                description=config['description'], configform=igc_config_form)
     return render_template('users/igc_parsing_settings.html', save=save, name=filename[:-5],
-                           description=config['description'], configform=igc_config_form)
+                        description=config['description'], configform=igc_config_form)
 
 
 @blueprint.route('/_del_igc_config/<string:filename>', methods=['POST'])

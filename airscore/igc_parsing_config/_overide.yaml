@@ -1,5 +1,5 @@
 owner: superuser
-editable: False
+editable: false
 description: Practically no checks, used to force acceptance of IGC file.
 
   #

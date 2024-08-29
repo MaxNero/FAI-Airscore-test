@@ -12,11 +12,13 @@ IGC Parsing
 <form method='post' action=''>
   {{configform.hidden_tag()}}
   <div class='container'>
-    <br>
-    <center>
+    <p style="text-align:center;">
       <h1>Setting: {{name}}</h1>
       <h5>{{description}}</h5>
-    </center>
+      {% if not save %}
+        <h5>This file is read only. You may save it as another file that you will then be able to edit</h5>
+      {% endif %}
+    </p>
   </div>
   <p>
     <button class='btn btn-primary ml-4' type='button' data-toggle='collapse' data-target='#collapse1'
@@ -158,13 +160,11 @@ IGC Parsing
     </div>
   </div>
   <div class='container'>
-    <br>
-    <center>
+    <p style="text-align:center;">
       {% if save %}
       <button id='save' type='button' class='btn btn-danger' data-toggle='modal' data-target='#save_modal'
               data-dismiss='modal'>Save
       </button>
-
       {% endif%}
       <button type='button' class='btn btn-primary' id='save-as' data-toggle='modal' data-target='#save_as_modal'>Save
         as
@@ -173,9 +173,8 @@ IGC Parsing
       <button id='delete' type='button' class='btn btn-danger' data-toggle='modal' data-target='#delete_modal'
               data-dismiss='modal'>Delete
       </button>
-
       {% endif%}
-    </center>
+    </p>
   </div>
 
 
