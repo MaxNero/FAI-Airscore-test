@@ -840,6 +840,7 @@ def _get_livetracking(taskid: int):
     from livetracking import get_live_json
     from calcUtils import sec_to_string, time_to_seconds, c_round
     from datetime import datetime
+
     result_file = get_live_json(taskid)
 
     formatted = frontendUtils.get_pretty_data(result_file)
@@ -859,6 +860,9 @@ def _get_livetracking(taskid: int):
         others = [p for p in result_file['data'] if not p['ESS_time']]
         results.extend(sorted(others, key=lambda k: k['distance'], reverse=True))
         data = []
+        # leading factor
+        pilots_for_leading = [p for p in results if 'fixed_LC' in p.keys() and p['ESS_time']]  # pilots who flew the speed section
+        min_LC = 0 if not len(pilots_for_leading) else min( pilots_for_leading, key=lambda k: k['fixed_LC'])['fixed_LC']
         for idx, el in enumerate(results, 1):
             status = ''
             res = ''
@@ -893,9 +897,20 @@ def _get_livetracking(taskid: int):
                 else:
                     m, s = divmod(rawtime - el['last_time'], 60)
                     status += f" [{m:02d}:{s:02d} old]"
+
+            # live taskboard leading calculation:
+            # will show top leading pilot and top 20 pilots preview of leading after ESS
+            if min_LC > 0 and el in pilots_for_leading and (idx <= 20 or el['fixed_LC'] == min_LC):
+                LCp = el['fixed_LC']
+                LFp = 1 - ((LCp - min_LC) / min_LC) ** (2/3)
+                if LFp > 0:
+                    status += f"{' | ' if status != '' else ''}{'<b>Top Leading</b>' if LFp == 1 else 'Leading Ratio: ' + str(round(LFp * 100, 1)) + '%'}"
+
             time = sec_to_string(el['last_time'], offset) if el['last_time'] else ''
-            p = dict(rank=idx, id=el['ID'], name=f"<span class='sex-{el['sex']}'>{el['name']}</span>", sex=el['sex'],
-                     result=res, comment=comment, time=time, status=status)
+            p = dict(
+                rank=idx, id=el['ID'], name=f"<span class='sex-{el['sex']}'>{el['name']}</span>", sex=el['sex'],
+                result=res, comment=comment, time=time, status=status
+            )
             data.append(p)
 
         formatted['data'] = data
