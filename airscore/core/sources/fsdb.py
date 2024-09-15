@@ -589,6 +589,8 @@ class FSDB(object):
 
             '''FsCompetitionResults'''
             compresults = ET.SubElement(comp, 'FsCompetitionResults')
+            teamresults = ET.SubElement(comp, 'FsTeamResults')
+            filename = get_comp_json_filename(self.comp.comp_id)
 
             for num, task in enumerate(self.tasks, start=1):
                 if num == len(self.tasks):
@@ -596,7 +598,8 @@ class FSDB(object):
                     print(f"n: {num} | {task.task_name} | type {type(result)}")
                 else:
                     # intermetiate results
-                    result = get_pretty_data(self.comp.calculate_results(task_num=task.task_num), result_type='comp')
+                    self.comp.calculate_results(task_num=task.task_num)
+                    result = get_pretty_data(self.comp.json_elements, result_type='comp')
                     print(f"ELSE n: {num} | {task.task_name} | type {type(result)}")
                     print(result)
                 rankings = result['rankings']
@@ -624,11 +627,8 @@ class FSDB(object):
                             pt.set('counting_points', x[1]['score'])
                             pt.set('counts', '1')
 
-            '''FsTeamResults'''
-            if formula.team_scoring or formula.country_scoring:
-                teamresults = ET.SubElement(comp, 'FsTeamResults')
-                filename = get_comp_json_filename(self.comp.comp_id)
-                for num, task in enumerate(self.tasks, start=1):
+                '''FsTeamResults'''
+                if formula.team_scoring or formula.country_scoring:
                     if formula.team_scoring:
                         # task team results
                         results = get_task_team_scoring(get_task_json_filename(task.task_id))
@@ -651,13 +651,12 @@ class FSDB(object):
                                 pt = ET.SubElement(par, 'FsTask')
                                 pt.set('id', str(num))
                                 pt.set('counts', '0' if '<del>' in p['score'] else '1')
-
-
                         # comp team results
                         if num == len(self.tasks):
                             results = get_comp_team_scoring(filename)
                         else:
-                            results = calculate_comp_team_scoring(self.comp.calculate_results(task_num=task.task_num))
+                            self.comp.calculate_results(task_num=task.task_num)
+                            results = calculate_comp_team_scoring(self.comp.json_elements)
                         tr = ET.SubElement(teamresults, 'FsTeamResult')
                         tr.set('id', 'comp_team')
                         tr.set('title', f"Competition Team Results after {task.task_name}")
@@ -705,12 +704,12 @@ class FSDB(object):
                                 pt = ET.SubElement(par, 'FsTask')
                                 pt.set('id', str(num))
                                 pt.set('counts', '0' if '<del>' in p['score'] else '1')
-
                         # comp nation results
                         if num == len(self.tasks):
                             results = get_comp_country_scoring(filename)
                         else:
-                            results = calculate_comp_country_scoring(self.comp.calculate_results(task_num=task.task_num))
+                            self.comp.calculate_results(task_num=task.task_num)
+                            results = calculate_comp_country_scoring(self.comp.json_elements)
                         tr = ET.SubElement(teamresults, 'FsTeamResult')
                         tr.set('id', 'comp_nations')
                         tr.set('title', f"Competition Nation Results after {task.task_name}")

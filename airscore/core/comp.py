@@ -216,6 +216,19 @@ class Comp(object):
         else:
             return 0
 
+    @property
+    def json_elements(self) -> dict:
+        '''returns results json file elements'''
+        elements = {
+            'info': {x: getattr(self, x) for x in CompResult.info_list},
+            'rankings': self.rankings,
+            'tasks': [{x: getattr(t, x) for x in CompResult.task_list} for t in self.tasks],
+            'results': self.results,
+            'formula': {x: getattr(self.formula, x) for x in CompResult.formula_list},
+            'stats': {x: getattr(self, x) for x in CompResult.stats_list},
+        }
+        return elements
+
     @staticmethod
     def read(comp_id: int) -> object or None:
         """Reads competition from database
@@ -332,18 +345,29 @@ class Comp(object):
         """gets tasks details from database. They could be different from JSON data for scored tasks"""
         return compUtils.get_tasks_details(self.comp_id)
 
-    def get_tasks_from_result_files(self):
+    def populate_from_tasks_result_files(self, task_num=None):
         """creates the Task objects from the active json files for each task"""
+
+        self.results = []
+        '''initialize obj attributes'''
+        self.participants = get_participants(self.comp_id)
+        self.results.extend(
+            [
+                dict(results={}, **{x: getattr(p, x) for x in CompResult.result_list if x in dir(p)})
+                for p in self.participants
+            ]
+        )
+        ''' get rankings '''
+        self.get_rankings()
         files = get_tasks_result_files(self.comp_id)
         if not len(files):
             print(f"there are no task result files for this comp yet")
             return
         self.tasks = []
         for t in files:
-            print(f"comp get tasks: file {t.file}")
             task = Task.create_from_json(task_id=t.task_id, filename=t.file)
-            print(f"task is Task? {isinstance(task, Task)} ({type(task)})")
-            self.tasks.append(task)
+            if task_num is None or task.task_num <= task_num:
+                self.tasks.append(task)
 
     @staticmethod
     def from_json(comp_id: int, ref_id=None):
@@ -385,31 +409,8 @@ class Comp(object):
                     comp.track_source = 'flymaster'
             return comp
 
-    def calculate_results(self, task_num=None) -> dict:
-        """ returns the json object of the results
-            :param
-            task_num: optional INT to limit the number of considered tasks.
-        """
-        from calcUtils import c_round
-
-        self.results = []
-
-        '''initialize obj attributes'''
-        self.participants = get_participants(self.comp_id)
-        self.results.extend(
-            [
-                dict(results={}, **{x: getattr(p, x) for x in CompResult.result_list if x in dir(p)})
-                for p in self.participants
-            ]
-        )
-        ''' get rankings '''
-        self.get_rankings()
-
-        '''get tasks'''
+    def create_results_score_details(self):
         td = self.formula.task_result_decimal
-        self.get_tasks_from_result_files()
-        if task_num:
-            self.tasks = [e for e in self.tasks if e.task_num <= task_num]
         for task in self.tasks:
             if task.training:
                 continue
@@ -417,23 +418,22 @@ class Comp(object):
             r = task.ftv_validity * 1000
             '''get pilots result'''
             for p in self.results:
-                s = next((res.score or 0 for res in task.pilots if res.par_id == p['par_id']), 0)
+                s = next((res.score or 0 for res in task.pilots if res.par_id == p.get('par_id')), 0)
                 perf = c_round(s / r, td + 3)
                 p['results'][task.task_code] = {'pre': c_round(s, td), 'perf': perf, 'score': c_round(s, td)}
 
         '''calculate final score'''
         self.get_final_scores()
-        '''create json file'''
-        elements = {
-            'info': {x: getattr(self, x) for x in CompResult.info_list},
-            'rankings': self.rankings,
-            'tasks': [{x: getattr(t, x) for x in CompResult.task_list} for t in self.tasks],
-            'results': self.results,
-            'formula': {x: getattr(self.formula, x) for x in CompResult.formula_list},
-            'stats': {x: getattr(self, x) for x in CompResult.stats_list},
-        }
 
-        return elements
+    def calculate_results(self, task_num=None):
+        """ returns the json object of the results
+            :param
+            task_num: optional INT to limit the number of considered tasks.
+        """
+
+        '''get tasks and results'''
+        self.populate_from_tasks_result_files()
+        self.create_results_score_details()
 
     @staticmethod
     def create_results_file(comp_id, status=None, decimals=None, name_suffix=None):
@@ -451,9 +451,10 @@ class Comp(object):
             comp.formula.comp_result_decimal = decimals
             comp.formula.task_result_decimal = decimals
 
-        result = comp.calculate_results()
+        comp.calculate_results()
+
         ref_id, filename, timestamp = create_json_file(
-            comp_id=comp.id, task_id=None, code=comp.comp_code, elements=result, status=status, name_suffix=name_suffix
+            comp_id=comp.id, task_id=None, code=comp.comp_code, elements=comp.json_elements, status=status, name_suffix=name_suffix
         )
         return comp, ref_id, filename, timestamp
 
@@ -463,7 +464,6 @@ class Comp(object):
             - round:    task discard every [param] tasks
             - ftv:      calculate task scores and total score based on FTV [param]
         """
-        from calcUtils import c_round
 
         val = self.formula.overall_validity
         param = self.formula.validity_param
