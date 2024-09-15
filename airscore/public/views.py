@@ -554,6 +554,21 @@ def comp_result(compid: int):
     return render_template('public/comp_overall.html', compid=compid, results=result_file)
 
 
+@blueprint.route('/ftv_bracket/<int:compid>')
+def ftv_bracket(compid: int):
+
+    data = frontendUtils.create_ftv_bracket(compid)
+    result_file = frontendUtils.get_pretty_data(data, result_type='comp')
+    if result_file == 'error':
+        return render_template('404.html')
+
+    for t in result_file['tasks']:
+        link, code = f"/task_result/{t['id']}", t['task_code']
+        t['link'] = f"<a href='{link}' target='_blank'>{code}</a>"
+
+    return render_template('public/ftv_bracket.html', compid=compid, results=result_file)
+
+
 @blueprint.route('/country_overall/<int:compid>')
 def country_overall(compid: int):
     return render_template('public/country_overall.html', compid=compid)

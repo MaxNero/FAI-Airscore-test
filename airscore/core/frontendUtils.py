@@ -2694,3 +2694,49 @@ def get_task_from_file(task_id: int, file) -> bool:
     task = Task.update_from_dict(task_id, task_info)
     return True
 
+
+def create_ftv_bracket(comp_id: int) -> list:
+    from comp import Comp
+    from task import Task
+    from pilot.flightresult import FlightResult
+
+    comp = Comp.read(comp_id)
+    comp.populate_from_tasks_result_files()
+    bracket = {}
+
+    t = Task()
+    t.comp_id = comp_id
+    t.task_num = comp.tasks[-1].task_num + 1
+    t.formula = comp.tasks[-1].formula
+    t.day_quality = 1
+    t.status = 'dummy task for FTV brackets calculation'
+    t.get_pilots()
+
+    for p in t.pilots:
+        p.score = 1000
+        p.result_type = 'goal'
+    comp.tasks.append(t)
+
+    comp.create_results_score_details()
+
+    # create data
+    for p in comp.results:
+        bracket[p['ID']] = p['score']
+
+    # need to add a dummy pilot to calculate min score
+    dummy = FlightResult(name='dummy')
+    dummy.result_type = 'goal'
+    comp.tasks[-1].pilots.append(dummy)
+
+    for p in comp.tasks[-1].pilots:
+        p.score = 0 if p.ID is not None else 1000
+
+    comp.create_results_score_details()
+    data = comp.json_elements
+
+    # add min and max score to data
+    for p in data['results']:
+        p['min_score'] = p['score']
+        p['max_score'] = bracket[p['ID']]
+
+    return data
