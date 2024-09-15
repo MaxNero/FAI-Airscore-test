@@ -39,6 +39,8 @@ a = 6378137  # WSG84 major meters
 b = 6356752.3142  # WGS84 minor meters
 f = 0.0033528106647474805  # WGS84 flattening
 
+''' Standard geodesic distance calculation algorithm'''
+METHOD = 'fast_andoyer'
 
 # a = ELLIPSOIDS['WGS-84'][0] * 1000  # WSG84 major meters: 6378137
 # b = ELLIPSOIDS['WGS-84'][1] * 1000  # WGS84 minor meters: 6356752.3142
@@ -55,11 +57,11 @@ class Turnpoint:
         dlon: a float, longitude (for optimised route)
         altitude: altitude amsl
         radius: radius of cylinder or line in m
-        type: type of turnpoint; "launch",
-                                 "speed",
-                                 "waypoint",
-                                 "endspeed",
-                                 "goal"
+        type: type of turnpoint;    "launch",
+                                    "speed",
+                                    "waypoint",
+                                    "endspeed",
+                                    "goal"
         shape: "line" or "circle"
         how: "entry" or "exit"
     """
@@ -135,9 +137,9 @@ class Turnpoint:
     def in_radius(self, fix, t, tm):
         """Checks whether the provided GNSSFix is within the radius
         arguments:
-        fix - gnns fix object from flight
-        t - tolerance as a percentage
-        tm- minimum tolerance in meters"""
+        fix:    gnns fix object from flight
+        t:      tolerance as a percentage
+        tm:     minimum tolerance in meters"""
         if t < 0:
             tol = min(tm, self.radius * t)
         else:
@@ -264,7 +266,7 @@ def cartesian2polar(xyz):
     return polar(lat, lon, flat, flon)
 
 
-def distance(p1, p2, method='fast_andoyer'):
+def distance(p1, p2, method=METHOD):
     if FAI_SPHERE:
         return haversine((p1.lat, p1.lon), (p2.lat, p2.lon), unit=Unit.METERS)
     if method == "fast_andoyer":
@@ -467,10 +469,9 @@ def tp_made_civl(fix, next, tp, tolerance, min_tol_m):
     It is now used also for START cylinder following the FAI Rules / CIVL Gap Rules 2021 6.2.1
     """
 
-    condition = (not (tp.in_radius(fix, -tolerance, -min_tol_m)) and (tp.in_radius(next, tolerance, min_tol_m))) or (
-        not (tp.in_radius(next, -tolerance, -min_tol_m)) and (tp.in_radius(fix, tolerance, min_tol_m))
+    condition = (not tp.in_radius(fix, -tolerance, -min_tol_m) and tp.in_radius(next, tolerance, min_tol_m)) or (
+        tp.in_radius(fix, tolerance, min_tol_m) and not tp.in_radius(next, -tolerance, -min_tol_m)
     )
-
     return condition
 
 
@@ -499,10 +500,9 @@ def tp_time_civl(fix, next, tp):
     crossing.time = interpolateTime(trackpoint[j],trackpoint[j+1])
     '''
 
-    if (tp.in_radius(fix, 0, 0) and tp.in_radius(next, 0, 0)) or (
-        not (tp.in_radius(fix, 0, 0)) and not (tp.in_radius(next, 0, 0))
-    ):
-        return fix.rawtime if tp.type != 'endspeed' else next.rawtime
+    if ((tp.in_radius(fix, 0, 0) and tp.in_radius(next, 0, 0)) 
+        or (not tp.in_radius(fix, 0, 0) and not tp.in_radius(next, 0, 0))):
+        t = fix.rawtime if tp.type != 'endspeed' else next.rawtime
     else:
         """interpolate time:
         Will use distance from radius of the two points, and the proportion of times"""
@@ -510,7 +510,8 @@ def tp_time_civl(fix, next, tp):
         d2 = abs(distance(tp, next) - tp.radius)
         speed = (d1 + d2) / (next.rawtime - fix.rawtime)
         t = c_round((fix.rawtime + d1 / speed), 2)
-        return t
+
+    return t
 
 
 def in_semicircle(wpts, idx, fix, t=0.001, min_t=5):

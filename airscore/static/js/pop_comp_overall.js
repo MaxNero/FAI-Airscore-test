@@ -52,7 +52,7 @@ function populate_comp_overall(json){
                 let thead = tbl.createTHead();
                 let row = thead.insertRow();
                 console.log('validity='+json.formula.overall_validity);
-                if (json.formula.overall_validity == 'FTV') {
+                if (json.formula.overall_validity.toLowerCase() == 'ftv') {
                     header = [ 'Task', 'Date', 'Distance', 'FTV Validity' ];
                     keys = [ 'link', 'date', 'opt_dist', 'ftv_validity' ]
                 }
@@ -87,9 +87,9 @@ function populate_comp_overall(json){
                         "<tr><td>Location</td><td>" + json.info.comp_site + '</td></tr>' +
                         "<tr><td>Formula</td><td>" + json.formula.formula_name + '</td></tr>' +
                         "<tr><td>Overall Scoring</td><td>" + json.formula.overall_validity + ' (' + json.formula.validity_param + ')</td></tr>');
-            if (json.formula.overall_validity == 'ftv') {
+            if (json.formula.overall_validity.toLowerCase() == 'ftv') {
                 $('#formula tbody').append(
-                        "<tr><td>Total Validity</td><td>" + json.stats.total_validity + '</td></tr>');
+                        "<tr><td>Total Validity</td><td>" + json.stats.total_validity + ' (FTV validity ' + json.stats.avail_validity + ')</td></tr>');
             }
             // remove empty cols and NAT if all pilots are from a single country
             var natId = table.DataTable().column('NAT:name').index();

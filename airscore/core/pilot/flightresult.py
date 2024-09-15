@@ -395,13 +395,13 @@ class FlightResult(Participant):
     def check_flight(self, flight, task, airspace_obj=None, deadline=None, print=print):
         """Checks a Flight object against the task.
         Args:
-               :param flight: a Flight object
-               :param task: a Task
-               :param airspace_obj: airspace object to check flight against
-               :param deadline: in multiple start or elapsed time, I need to check again track using Min_flight_time
+            :param flight: a Flight object
+            :param task: a Task
+            :param airspace_obj: airspace object to check flight against
+            :param deadline: in multiple start or elapsed time, I need to check again track using Min_flight_time
                             as deadline
-               :param print: function to overide print() function. defaults to print() i.e. no override. Intended for
-                             sending progress to front end
+            :param print: function to overide print() function. defaults to print() i.e. no override. Intended for
+                        sending progress to front end
         Returns:
                 a list of GNSSFixes of when turnpoints were achieved.
         """
@@ -433,7 +433,7 @@ class FlightResult(Participant):
         if hasattr(flight, 'landing_fix'):
             self.landing_time = flight.landing_fix.rawtime
             self.landing_altitude = (flight.landing_fix.gnss_alt if alt_source == 'GPS'
-                                     else flight.landing_fix.press_alt + alt_compensation)
+                                    else flight.landing_fix.press_alt + alt_compensation)
 
         '''Turnpoint managing'''
         tp = FlightPointer(task)

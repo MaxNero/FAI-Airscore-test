@@ -82,9 +82,9 @@ function populate_ladder(ladderid, season){
                         // some parameters
                         $('#formula tbody').append(
                                     "<tr><td>Overall Scoring</td><td>" + json.formula.overall_validity + ' (' + json.formula.validity_param + ')</td></tr>');
-                        if (json.formula.overall_validity == 'ftv') {
+                        if (json.formula.overall_validity.toLowerCase() == 'ftv') {
                             $('#formula tbody').append(
-                                    "<tr><td>Total Validity</td><td>" + json.stats.total_validity + '</td></tr>');
+                                    "<tr><td>Total Validity</td><td>" + json.stats.total_validity + ' (FTV validity ' + json.stats.avail_validity + ')</td></tr>');
                         }
                         // remove empty cols
                         for ( var i=1; i<numCols; i++ ) {

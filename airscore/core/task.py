@@ -726,7 +726,6 @@ class Task(object):
             print(f'Tracks (Task ID {self.id}) have not been checked yet or stats have not been updated.')
             return False
         if not self.stopped_time:
-            print(f'Task (ID {self.id}) has not been stopped.')
             return True
         min_task_duration = self.formula.validity_min_time
         if self.comp_class == 'PG':
@@ -1006,8 +1005,6 @@ class Task(object):
         if not t:
             print(f"There's no active json file for task {task_id}, or given filename does not exists")
             return None
-
-        print(f"task {task_id} json file: {filename}")
 
         task = Task(task_id=task_id)
         # task.__dict__.update(t['info'])

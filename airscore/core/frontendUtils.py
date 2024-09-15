@@ -420,13 +420,13 @@ def get_task_list(comp_id: int) -> dict:
             task['needs_new_scoring'], task['needs_recheck'], task['needs_full_rescore'] = check_task(task['task_id'])
             '''check if we have all we need to be able to accept tracks and score'''
             task['ready_to_score'] = (
-                                         task['opt_dist']
-                                         and task['window_open_time']
-                                         and task['window_close_time']
-                                         and task['start_time']
-                                         and task['start_close_time']
-                                         and task['task_deadline']
-                                     ) is not None
+                task['opt_dist']
+                and task['window_open_time']
+                and task['window_close_time']
+                and task['start_time']
+                and task['start_close_time']
+                and task['task_deadline']
+            ) is not None
 
     return {'next_task': max_task_num + 1, 'last_region': last_region, 'tasks': tasks}
 
@@ -482,9 +482,10 @@ def check_task_turnpoints(task_id: int, wpt_id: int) -> dict:
             '''SSS changed'''
             tp.type = 'waypoint'
             edited = True
-        elif ((tp.type == 'endspeed' and last_edited.type == tp.type and not tp.wpt_id == last_edited.wpt_id)
-              or (any(t.type == 'speed' for t in tps)
-                  and task.turnpoints.index(tp) < tps.index(next(t for t in tps if t.type == 'speed')))):
+        elif (
+            (tp.type == 'endspeed' and last_edited.type == tp.type and not tp.wpt_id == last_edited.wpt_id)
+            or (any(t.type == 'speed' for t in tps)
+                and task.turnpoints.index(tp) < tps.index(next(t for t in tps if t.type == 'speed')))):
             '''ESS changed or SSS is after this tp'''
             tp.type = 'waypoint'
             edited = True
@@ -801,8 +802,10 @@ def process_igc(task_id: int, par_id: int, tracklog, user, check_g_record=False,
         tmpdir = mkdtemp(dir=TEMPFILES)
         file = Path(tmpdir, tracklog.filename)
         tracklog.save(file)
-        job = current_app.task_queue.enqueue(process_igc_background,
-                                             task_id, par_id, file, user, check_g_record, check_validity)
+        job = current_app.task_queue.enqueue(
+            process_igc_background,
+            task_id, par_id, file, user, check_g_record, check_validity
+        )
         return True, None
 
     pilot = FlightResult.read(par_id, task_id)
@@ -886,9 +889,11 @@ def track_result_output(pilot, task_id) -> dict:
     data = {'par_id': pilot.par_id, 'ID': pilot.ID, 'track_id': pilot.track_id, 'Result': '', 'notifications': ''}
 
     if not pilot.track_file:
-        data['Result'] = ("Min Dist" if pilot.result_type == "mindist"
-                          else "Not Yet Processed" if pilot.result_type == "nyp"
-                          else pilot.result_type.upper())
+        data['Result'] = (
+            "Min Dist" if pilot.result_type == "mindist"
+            else "Not Yet Processed" if pilot.result_type == "nyp"
+            else pilot.result_type.upper()
+        )
     else:
         time = ''
         if pilot.ESS_time:

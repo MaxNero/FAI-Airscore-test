@@ -694,14 +694,11 @@ def region_map(regid: int):
         flash('Openair file seems to be missing or format is wrong. Please contact Organisers', category='warning')
         openair_file = None
 
-    return render_template('public/region_map.html',
-                           regid=regid,
-                           name=region.name,
-                           args=args,
-                           map=get_map_render(reg_map),
-                           waypoints=waypoints,
-                           airspace=airspace_list,
-                           waypoint_file=region.waypoint_file, openair_file=openair_file)
+    return render_template(
+        'public/region_map.html',
+        regid=regid, name=region.name, args=args, map=get_map_render(reg_map),
+        waypoints=waypoints, airspace=airspace_list, waypoint_file=region.waypoint_file, openair_file=openair_file
+    )
 
 
 @blueprint.route('/task_airspace/<int:taskid>', methods=["GET", "POST"])
@@ -866,7 +863,6 @@ def _get_livetracking(taskid: int):
         for idx, el in enumerate(results, 1):
             status = ''
             res = ''
-
             '''status, time or distance'''
             if el['first_time'] is None:
                 '''not launched'''
@@ -923,8 +919,10 @@ def tracks(taskid: int):
     data = frontendUtils.get_task_info(taskid)
     offset = data['info']['time_offset']
     formatted = frontendUtils.get_pretty_data(data)
-    return render_template('public/tracks.html',
-                           taskid=taskid, info=formatted['info'], route=formatted['route'], offset=offset)
+    return render_template(
+        'public/tracks.html',
+        taskid=taskid, info=formatted['info'], route=formatted['route'], offset=offset
+    )
 
 
 @blueprint.route('/_get_tracks_status/<int:taskid>', methods=['GET', 'POST'])
