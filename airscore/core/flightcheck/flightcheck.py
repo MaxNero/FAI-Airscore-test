@@ -355,7 +355,7 @@ def calculate_final_results(
             if tp.made_all:
                 evaluate_goal(result, task)
 
-        else:
+        elif lead_coeff:
             '''save optimised best_dist_to_ESS for LC calculation'''
             result.best_dist_to_ESS = lead_coeff.best_dist_to_ess_m
 
