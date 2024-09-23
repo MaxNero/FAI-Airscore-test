@@ -239,6 +239,7 @@ def extract_participants_from_excel(comp_id: int, filename, certs: list, from_CI
 
     '''custom attributes'''
     col = 15
+    xcontest = None
     custom_attributes = []
     '''check if class column has correct glider certification, otherwise add a class custom attribute'''
     classes = set(r[0] for r in sheet.iter_rows(min_row=2, min_col=13, max_col=13, values_only=True) if r[0])
@@ -250,6 +251,8 @@ def extract_participants_from_excel(comp_id: int, filename, certs: list, from_CI
         if not value:
             'no custom attributes'
             break
+        if value == "xcontest_id":
+            xcontest = col
         custom_attributes.append(CompAttribute(comp_id=comp_id, attr_key='meta', attr_value=value))
         col += 1
 
@@ -282,9 +285,14 @@ def extract_participants_from_excel(comp_id: int, filename, certs: list, from_CI
         '''custom attributes'''
         if custom_attributes:
             # pil.attributes = []
-            for idx, el in enumerate(c for c in custom_attributes if not c.attr_value == 'class'):
-                pil.attributes.append({'attr_value': el.attr_value, 'meta_value': row[14+idx]})
+            for idx, el in enumerate((c for c in custom_attributes if c.attr_value != 'class'), 14):
+                if xcontest is not None and el.attr_value == 'xcontest_id':
+                    pil.xcontest_id = row[idx]
+                else:
+                    pil.attributes.append({'attr_value': el.attr_value, 'meta_value': row[idx]})
         pilots.append(pil)
+
+    custom_attributes = [el for el in custom_attributes if el.attr_value != 'xcontest_id']
 
     return pilots, custom_attributes
 
