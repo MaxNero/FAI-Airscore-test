@@ -203,6 +203,10 @@ output/*/index.html
 # npm
 /node_modules/
 
+# developer console files
+airscore/core/console
+airscore/core/console/*
+
 # docker-compose files
 docker-compose-server*.*
 docker-compose-fai*
