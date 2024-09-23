@@ -5,6 +5,8 @@ _pycache_
 *.py[cod]
 *.pyc
 *$py.class
+_Inline/
+_Inline/*
 
 # C extensions
 *.so
