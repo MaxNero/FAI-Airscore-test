@@ -242,7 +242,9 @@ class FlightResult(Participant):
         result.last_altitude = float(fdata.get('last_tracklog_point_alt') or 0)
         result.max_altitude = int(fdata.get('max_alt') if fdata.get('max_alt') is not None else 0)
         result.track_file = fdata.get('tracklog_filename')
-        result.lead_coeff = None if fdata.get('lc') is None else float(fdata.get('lc'))
+        # it seems newer FC Comp versions moved some parameters
+        lc = fdata.get('lc') if fdata.get('lc') is not None else fres.get('lc')
+        result.lead_coeff = None if lc is None else float(lc)
         if not fdata.get('finished_ss') == "":
             result.ESS_altitude = float(fdata.get('altitude_at_ess') or 0)
 
