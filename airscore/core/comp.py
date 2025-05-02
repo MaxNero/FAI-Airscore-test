@@ -160,7 +160,9 @@ class Comp(object):
     def dropped_tasks(self):
         if len(self.tasks) > 0:
             if self.formula.overall_validity == 'round':
-                return int(len(self.tasks) / self.formula.validity_param)
+                tasks_interval = int((1 - self.formula.validity_param) * 100)
+                if tasks_interval > 0:
+                    return int(len(self.tasks) / tasks_interval)
         return 0
 
     # @property
