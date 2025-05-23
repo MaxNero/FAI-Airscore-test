@@ -67,8 +67,16 @@ def get_proj(clat, clon, proj=PROJ):
         return Proj(f"EPSG:{epsg_code}")
     else:
         '''custom Mercatore projection'''
+        # scaling factor
+        k_0 = 0.99994
+        la = abs(clat)
+        if la > 55:
+            k_0 += ((la - 55.0) / 60.0) * 1.3e-04
+
+        print(f" *** GEO.get_proj | CUSTOM MERCATORE: clat: {clat} | clon: {clon} | k_0: {k_0}")
+
         tmerc = Proj(
-            f"+proj=tmerc +lat_0={clat} +lon_0={clon} +k_0=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+            f"+proj=tmerc +lat_0={clat} +lon_0={clon} +k_0={k_0} +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
         )
         return tmerc
 
