@@ -764,6 +764,9 @@ def get_line(turnpoints: list, optimised_turnpoints: list, tol: float = 0.001, m
     """returns line segment extremes and bisecting segment extremes """
     if not (turnpoints[-1].shape == 'line'):
         return []
+    elif opt_line and not optimised_turnpoints:
+        # if no optimised turnpoints, return empty list as we cannot calculate the line
+        return []
     from pyproj import Geod
 
     clon, clat = turnpoints[-1].lon, turnpoints[-1].lat  # center point of the line
