@@ -93,7 +93,7 @@ class Task(object):
         check_launch='off',
     ):
         self.task_id = task_id
-        self.task_type = task_type  # 'race', 'elapsed_time'
+        self.task_type = task_type  # 'race', 'elapsed time'
         self.start_time = start_time
         self.task_deadline = task_deadline  # seconds from midnight: task deadline
         self.stopped_time = stopped_time  # seconds from midnight: time task was stopped (TaskStopAnnouncementTime).
@@ -1340,7 +1340,12 @@ class Task(object):
             # print ("leg dist.: {} - Dist.: {}".format(leg_dist, self.distance))
 
     def calculate_optimised_task_length(self, method="fast_andoyer"):
-        """new optimized route procedure that uses John Stevenson on FAI Basecamp.
+        """
+        Task distance is defined as the distance of the optimized path from launch to goal.
+        Speed section distance is defined as the distances of the optimized path from launch to ESS,
+        minus the distance of the pre-start portion.
+
+        new optimized route procedure that uses John Stevenson on FAI Basecamp.
         trasforms wgs84 to plan trasverse cartesian projection, calculates
         optimised fix on cylinders, and goes back to wgs84 for distance calculations.
         """

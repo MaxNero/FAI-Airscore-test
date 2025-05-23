@@ -482,19 +482,16 @@ class Comp(object):
             '''
             if not ((val == 'all') or (val == 'round' and self.dropped_tasks == 0) or (len(self.tasks) < 2)):
                 '''create a ordered list of results, perf desc'''
-                if val == 'round':
-                    sorted_results = sorted(pil['results'].items(), key=lambda x: (x[1]['pre']), reverse=True)
-                else:
-                    sorted_results = sorted(pil['results'].items(), key=lambda x: (x[1]['perf'], x[1]['pre']), reverse=True)
-
                 if val == 'round' and len(self.tasks) >= param:
                     '''we need to order by score desc and sum only the ones we need'''
+                    sorted_results = sorted(pil['results'].items(), key=lambda x: (x[1]['pre']), reverse=True)
                     for i in range(self.dropped_tasks):
                         idx = sorted_results.pop()[0]  # getting id of worst result task
                         pil['results'][idx]['score'] = 0
 
                 elif val == 'ftv' and len(self.tasks) > 1:
                     '''ftv calculation'''
+                    sorted_results = sorted(pil['results'].items(), key=lambda x: (x[1]['perf'], x[1]['pre']), reverse=True)
                     pval = avail_validity
                     for idx, s in sorted_results:
                         if not (pval > 0):

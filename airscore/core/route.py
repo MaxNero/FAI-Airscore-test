@@ -210,8 +210,8 @@ class cPoint(object):
     fy      (float)     the y coordinate of the fix
     """
 
-    def __str__(self):
-        print(f'x: {str(self.x)} | y: {str(self.y)} | radius: {str(self.radius)}')
+    def __str__(self) -> str:
+        return f"cPoint: {self.type} | x: {str(self.x)} | y: {str(self.y)} | radius: {str(self.radius)}"
 
     def __init__(self, x, y, radius=0, type='fix'):
         self.x = x
@@ -269,17 +269,11 @@ def cartesian2polar(xyz):
 def distance(p1, p2, method=METHOD):
     if FAI_SPHERE:
         return haversine((p1.lat, p1.lon), (p2.lat, p2.lon), unit=Unit.METERS)
-    if method == "fast_andoyer":
-        # print ("fast andoyer")
-        return fast_andoyer(p1, p2)
-    # elif method == "vincenty":
-    #     # print ("vincenty")
-    #     return vincenty((p1.lat, p1.lon), (p2.lat, p2.lon)).meters
-    elif method == "geodesic":
-        # print ("geodesic")
+    if method == "geodesic":
+        # geodesic
         return geodesic((p1.lat, p1.lon), (p2.lat, p2.lon)).meters
     else:
-        # print ("other")
+        # fast andoyer
         return fast_andoyer(p1, p2)
 
 
@@ -600,6 +594,17 @@ def distance_flown(fix, i, short_route, wpt, distances_to_go):
 
 
 def fast_andoyer(p1, p2):
+    """
+    Optimized Fast Andoyer algorithm.
+
+    Args:
+        p1: A namedtuple or similar object with 'lat' and 'lon' attributes (in degrees).
+        p2: A namedtuple or similar object with 'lat' and 'lon' attributes (in degrees).
+
+    Returns:
+        The distance between p1 and p2 in meters.
+    """
+
     flattening = f  # ELLIPSOIDS['WGS-84'][2]
     semi_major_axis = a  # ELLIPSOIDS['WGS-84'][0] * 1000
 
