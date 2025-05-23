@@ -10,7 +10,7 @@ import importlib
 from dataclasses import dataclass, fields, asdict
 from os import listdir
 
-from calcUtils import c_round
+from calcUtils import c_round, get_float
 from db.conn import db_session
 from sqlalchemy.orm import aliased
 
@@ -334,7 +334,7 @@ class Formula(object):
             formula = cls()
         formula = get_fsdb_info(formula, data)
         formula.comp_class = comp_class
-        formula.validity_param = 1.0 - float(fs_info.get('ftv_factor') or 0)
+        formula.validity_param = 1.0 - get_float(fs_info.get('ftv_factor') or 0)
         if formula.validity_param < 1:
             formula.overall_validity = 'ftv'
         else:
@@ -481,11 +481,11 @@ def get_fsdb_info(formula: Formula or TaskFormula, fsdb_data) -> Formula or Task
 
     formula.formula_name = fsdb_data.get('id')
     '''scoring parameters'''
-    formula.min_dist = float(fsdb_data.get('min_dist')) * 1000  # min. distance, meters
-    formula.nominal_dist = float(fsdb_data.get('nom_dist')) * 1000  # nom. distance, meters
-    formula.nominal_time = int(float(fsdb_data.get('nom_time')) * 3600)  # nom. time, seconds
-    formula.nominal_launch = float(fsdb_data.get('nom_launch'))  # nom. launch, perc / 100
-    formula.nominal_goal = float(fsdb_data.get('nom_goal'))  # nom. goal, perc / 100
+    formula.min_dist = get_float(fsdb_data.get('min_dist')) * 1000  # min. distance, meters
+    formula.nominal_dist = get_float(fsdb_data.get('nom_dist')) * 1000  # nom. distance, meters
+    formula.nominal_time = int(get_float(fsdb_data.get('nom_time')) * 3600)  # nom. time, seconds
+    formula.nominal_launch = get_float(fsdb_data.get('nom_launch'))  # nom. launch, perc / 100
+    formula.nominal_goal = get_float(fsdb_data.get('nom_goal'))  # nom. goal, perc / 100
     formula.scoring_altitude = 'GPS' if fsdb_data.get('scoring_altitude') == 'GPS' else 'QNH'
     # print(f"min. dist.: {float(fsdb_data.get('min_dist'))} - {formula.min_dist}")
     # print(f"nom. dist.: {float(fsdb_data.get('nom_dist'))} - {formula.nominal_dist}")
@@ -527,10 +527,10 @@ def get_fsdb_info(formula: Formula or TaskFormula, fsdb_data) -> Formula or Task
                             else formula.formula_time)
     '''leading points factor'''
     if fsdb_data.get('leading_weight_factor'):
-        formula.lead_factor = float(fsdb_data.get('leading_weight_factor'))
+        formula.lead_factor = get_float(fsdb_data.get('leading_weight_factor'))
     '''tolerance'''
     if fsdb_data.get('turnpoint_radius_tolerance'):
-        formula.tolerance = float(fsdb_data.get('turnpoint_radius_tolerance'))  # tolerance, perc / 100
+        formula.tolerance = get_float(fsdb_data.get('turnpoint_radius_tolerance'))  # tolerance, perc / 100
     if fsdb_data.get('turnpoint_radius_minimum_absolute_tolerance'):
         formula.min_tolerance = get_int(fsdb_data.get('turnpoint_radius_minimum_absolute_tolerance'))  # m
     '''stopped task parameters'''
@@ -541,16 +541,16 @@ def get_fsdb_info(formula: Formula or TaskFormula, fsdb_data) -> Formula or Task
     if fsdb_data.get('score_back_time'):
         formula.score_back_time = get_int(fsdb_data.get('score_back_time')) * 60  # Scoreback Time, seconds
     if fsdb_data.get('bonus_gr'):
-        formula.glide_bonus = float(fsdb_data.get('bonus_gr'))  # glide ratio
+        formula.glide_bonus = get_float(fsdb_data.get('bonus_gr'))  # glide ratio
     '''bonus and penalties'''
     if fsdb_data.get('time_points_if_not_in_goal'):
-        formula.no_goal_penalty = c_round(1.0 - float(fsdb_data.get('time_points_if_not_in_goal')), 4)
+        formula.no_goal_penalty = c_round(1.0 - get_float(fsdb_data.get('time_points_if_not_in_goal')), 4)
     if fsdb_data.get('final_glide_decelerator') == 'aatb':
-        formula.arr_alt_bonus = float(fsdb_data.get('aatb_factor'))
+        formula.arr_alt_bonus = get_float(fsdb_data.get('aatb_factor'))
     '''jump the gun'''
     if not fsdb_data.get('jump_the_gun_factor') == '0':
         formula.max_JTG = get_int(fsdb_data.get('jump_the_gun_max'))  # seconds
-        formula.JTG_penalty_per_sec = c_round(1 / float(fsdb_data.get('jump_the_gun_factor')), 4)
+        formula.JTG_penalty_per_sec = c_round(1 / get_float(fsdb_data.get('jump_the_gun_factor')), 4)
     '''results decimals'''
     if fsdb_data.get('number_of_decimals_task_results'):
         formula.task_result_decimal = get_int(fsdb_data.get('number_of_decimals_task_results'))

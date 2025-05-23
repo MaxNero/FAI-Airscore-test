@@ -78,6 +78,21 @@ def get_int(string) -> int:
         return 0
 
 
+def get_float(string) -> int:
+    if isinstance(string, (int, float)):
+        return float(string)
+    try:
+        return float(string)
+    except ValueError:
+        lstr = string.replace(',', '.').replace('_', ' ').replace('-', ' ').split()
+        for i in lstr:
+            if i.replace('.', '').isdigit():
+                return float(i)
+        return 0
+    except TypeError:
+        return 0
+
+
 def decimal_to_seconds(d_time):
     return int(d_time * 3600)
 
