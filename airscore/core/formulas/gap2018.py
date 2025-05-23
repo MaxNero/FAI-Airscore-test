@@ -16,6 +16,8 @@ from formulas.libs.leadcoeff import *
 formula_name = 'GAP2018'
 # Comp Class: PG, HG, BOTH
 formula_class = 'BOTH'
+# Visible in Formula list
+visible = False
 
 ''' Default Formula presets
     pg_preset: PG default values, if formula applies for PG or mixed
@@ -28,7 +30,7 @@ formula_class = 'BOTH'
 
 pg_preset = FormulaPreset(
     # This part should not be edited
-    formula_name=Preset(value=formula_name, visible=True, editable=True),
+    formula_name=Preset(value=formula_name, visible=visible, editable=True),
 
     # Editable part starts here
     # Distance Points: on, difficulty, off
@@ -45,6 +47,21 @@ pg_preset = FormulaPreset(
     formula_time=Preset(value='on', visible=True, editable=True),
     # SS distance calculation: launch_to_goal, launch_to_ess, sss_to_ess
     ss_dist_calc=Preset(value='launch_to_ess', visible=False),
+    # Goal line direction calculation: fix or optimised
+    line_calc=Preset(value='fix', visible=False),
+
+    # Competition Parameters
+    # Minimal Distance: minimum distance to be used for time validity calculation
+    min_dist=Preset(value=5000, visible=True, editable=True),
+    # Nominal Distance: nominal distance to be used for time validity calculation
+    nominal_dist=Preset(value=45000, visible=True, editable=True),
+    # Nominal Time: nominal time to be used for time validity calculation
+    nominal_time=Preset(value=5400, visible=True, editable=True),
+    # Nominal Launch: number of pilots that can DNF and still get full validity
+    nominal_launch=Preset(value=0.96, visible=True, editable=True),
+    # Nominal Goal: number of pilots that we assume should reach goal
+    nominal_goal=Preset(value=0.3, visible=True, editable=True),
+
     # Arrival Altitude Bonus: Bonus points factor on ESS altitude
     arr_alt_bonus=Preset(value=0, visible=True, editable=True),
     # ESS Min Altitude
@@ -83,7 +100,7 @@ pg_preset = FormulaPreset(
 
 hg_preset = FormulaPreset(
     # This part should not be edited
-    formula_name=Preset(value=formula_name, visible=True, editable=True),
+    formula_name=Preset(value=formula_name, visible=visible, editable=True),
 
     # Editable part starts here
     # Distance Points: on, difficulty, off
@@ -100,6 +117,21 @@ hg_preset = FormulaPreset(
     formula_time=Preset(value='on', visible=True, editable=True),
     # SS distance calculation: launch_to_goal, launch_to_ess, sss_to_ess
     ss_dist_calc=Preset(value='launch_to_ess', visible=False),
+    # Goal line direction calculation: fix or optimised
+    line_calc=Preset(value='fix', visible=False),
+
+    # Competition Parameters
+    # Minimal Distance: minimum distance to be used for time validity calculation
+    min_dist=Preset(value=7000, visible=True, editable=True),
+    # Nominal Distance: nominal distance to be used for time validity calculation
+    nominal_dist=Preset(value=45000, visible=True, editable=True),
+    # Nominal Time: nominal time to be used for time validity calculation
+    nominal_time=Preset(value=5400, visible=True, editable=True),
+    # Nominal Launch: number of pilots that can DNF and still get full validity
+    nominal_launch=Preset(value=0.96, visible=True, editable=True),
+    # Nominal Goal: number of pilots that we assume should reach goal
+    nominal_goal=Preset(value=0.3, visible=True, editable=True),
+
     # Arrival Altitude Bonus: Bonus points factor on ESS altitude
     arr_alt_bonus=Preset(value=0, visible=True, editable=True),
     # ESS Min Altitude

@@ -29,10 +29,11 @@ def list_formulas():
             formula_lib = get_formula_lib_by_name(file[:-3])
             try:
                 all_formulas.append(formula_lib.formula_name)
-                if formula_lib.formula_class == 'PG' or formula_lib.formula_class == 'BOTH':
-                    pg_formulas.append(formula_lib.formula_name)
-                if formula_lib.formula_class == 'HG' or formula_lib.formula_class == 'BOTH':
-                    hg_formulas.append(formula_lib.formula_name)
+                if formula_lib.visible:
+                    if formula_lib.formula_class in ('PG', 'BOTH'):
+                        pg_formulas.append(formula_lib.formula_name)
+                    if formula_lib.formula_class in ('HG', 'BOTH'):
+                        hg_formulas.append(formula_lib.formula_name)
             except (AttributeError, Exception):
                 pass
     all_formulas = sorted(all_formulas)
@@ -68,10 +69,16 @@ class FormulaPreset:
     formula_distance: Preset
     formula_arrival: Preset
     formula_departure: Preset
+    formula_time: Preset
     lead_factor: Preset
     lc_formula: Preset
-    formula_time: Preset
     ss_dist_calc: Preset
+    line_calc: Preset
+    min_dist: Preset
+    nominal_dist: Preset
+    nominal_time: Preset
+    nominal_launch: Preset
+    nominal_goal: Preset
     arr_alt_bonus: Preset
     arr_min_height: Preset
     arr_max_height: Preset
@@ -93,6 +100,10 @@ class FormulaPreset:
     def as_formula(self) -> dict:
         """ gets presets' value"""
         return {x.name: getattr(self, x.name).value for x in fields(self)}
+
+    def as_dict(self) -> dict:
+        """ gets presets' value"""
+        return asdict(self)
 
     def has_calculated_values(self) -> bool:
         """ returns True if any value needs to be calculated using lib.calculate_parameters()"""
