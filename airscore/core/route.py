@@ -544,18 +544,28 @@ def in_semicircle(wpts, idx, fix, t=0.001, min_t=5):
 
 def in_goal_sector(task, fix):
     wpts = task.turnpoints
-    t, min_t = task.formula.tolerance, task.formula.min_tolerance
     goal = next((tp for tp in wpts if tp.type == 'goal' and tp.shape == 'line'), None)
     if not goal:
         return
-    # print(f'distance from center: {distance(goal, fix)} m')
+    t, min_t = task.formula.tolerance, task.formula.min_tolerance
+    idx = task.turnpoints.index(goal)
+    proj_goal = task.projected_turnpoints[idx]
     if goal.in_radius(fix, t, min_t):
         x, y = task.geo.convert(fix.lon, fix.lat)
-        B1, B2 = task.projected_line[2], task.projected_line[3]
+        B1, B2 = proj_goal, task.projected_line[3]
         dx = B2.x - B1.x
         dy = B2.y - B1.y
         innerProduct = (x - B1.x) * dx + (y - B1.y) * dy
-        return 0 <= innerProduct <= dx * dx + dy * dy
+        if 0 <= innerProduct <= dx * dx + dy * dy:
+            # The point is inside the goal semi-circle sector
+            return True
+        line = [task.projected_line[0], task.projected_line[1]]
+        p = cPoint(x, y)
+        tol = max(goal.radius * t, min_t)
+        if distance_from_line(p, line) <= tol:
+            # The point is inside the goal line tolerance
+            return True
+    # The point is outside the goal sector
     return False
 
 
@@ -750,7 +760,7 @@ def opt_wp_enter(opt, t1, enter):
     return point
 
 
-def get_line(turnpoints: list, optimised_turnpoints: list = None, tol: float = 0.001, min_t: int = 5) -> list:
+def get_line(turnpoints: list, optimised_turnpoints: list, tol: float = 0.001, min_t: int = 5, opt_line: bool = True) -> list:
     """returns line segment extremes and bisecting segment extremes """
     if not (turnpoints[-1].shape == 'line'):
         return []
@@ -761,35 +771,36 @@ def get_line(turnpoints: list, optimised_turnpoints: list = None, tol: float = 0
     t = max(ln * tol, min_t)
     g = Geod(ellps="WGS84")
 
-    for tp in reversed(list(turnpoints)):
-        if not (tp.lat == clat and tp.lon == clon):
-            flon, flat = tp.lon, tp.lat
-            az1, az2, d = g.inv(clon, clat, flon, flat)
-            az1, az2 = az1 % 360, az2 % 360
-            lon1, lat1, az = g.fwd(clon, clat, az1 - 90, ln)
-            lon2, lat2, az = g.fwd(clon, clat, az1 + 90, ln)
-            if optimised_turnpoints:
-                # get goal area side
-                alat, alon = optimised_turnpoints[-2].lat, optimised_turnpoints[-2].lon
-                blat, blon = optimised_turnpoints[-1].lat, optimised_turnpoints[-1].lon
-                opt_bearing = calcBearing(alat, alon, blat, blon) % 360
-                if abs(opt_bearing - az2) > 90:
-                    az1, az2 = az2, az1
-            lon3, lat3, az = g.fwd(clon, clat, az1, t)
-            lon4, lat4, az = g.fwd(clon, clat, az2, ln + t)
+    # starting from GAP2025 line is perpendicular to latest optimised turnpoint instead of the first different fix
+    if optimised_turnpoints and opt_line:
+        flon, flat = optimised_turnpoints[-2].lon, optimised_turnpoints[-2].lat
+    else:
+        flon, flat = None, None
+        # get first different turnpoint before goal line
+        for tp in reversed(list(turnpoints)):
+            if not (tp.lat == clat and tp.lon == clon):
+                flon, flat = tp.lon, tp.lat
+                break
+        else:
+            # if all waypoints have same coordinates, returns a north-south line
+            lon1, lat1, az = g.fwd(clon, clat, 0, ln)
+            lon2, lat2, az = g.fwd(clon, clat, 180, ln)
+            lon3, lat3, az = g.fwd(clon, clat, 90, t)
+            lon4, lat4, az = g.fwd(clon, clat, 270, ln + t)
 
-            return [
-                Turnpoint(lat1, lon1, 0, 'optimised', 'optimised', 'optimised'),
-                Turnpoint(lat2, lon2, 0, 'optimised', 'optimised', 'optimised'),
-                Turnpoint(lat3, lon3, 0, 'optimised', 'optimised', 'optimised'),
-                Turnpoint(lat4, lon4, 0, 'optimised', 'optimised', 'optimised'),
-            ]
-
-    ''' if all waypoints have same coordinates, returns a north-south line'''
-    lon1, lat1, az = g.fwd(clon, clat, 0, ln)
-    lon2, lat2, az = g.fwd(clon, clat, 180, ln)
-    lon3, lat3, az = g.fwd(clon, clat, 90, t)
-    lon4, lat4, az = g.fwd(clon, clat, 270, ln + t)
+    if flon and flat:
+        az1, az2, d = g.inv(clon, clat, flon, flat)
+        az1, az2 = az1 % 360, az2 % 360
+        lon1, lat1, az = g.fwd(clon, clat, az1 - 90, ln)
+        lon2, lat2, az = g.fwd(clon, clat, az1 + 90, ln)
+        # get goal area side
+        alat, alon = optimised_turnpoints[-2].lat, optimised_turnpoints[-2].lon
+        blat, blon = optimised_turnpoints[-1].lat, optimised_turnpoints[-1].lon
+        opt_bearing = calcBearing(alat, alon, blat, blon) % 360
+        if abs(opt_bearing - az2) > 90:
+            az1, az2 = az2, az1
+        lon3, lat3, az = g.fwd(clon, clat, az1, t)
+        lon4, lat4, az = g.fwd(clon, clat, az2, ln + t)
 
     return [
         Turnpoint(lat1, lon1, 0, 'optimised', 'optimised', 'optimised'),
@@ -825,6 +836,11 @@ def get_shortest_path(task, ss_distance=False) -> list:
     SSS_index = None
     ESS_index = None
     before_SSS = None
+
+    if task.has_goal_line and task.has_optimised_line:
+        # we need to use goal as a point for optimization
+        points[-1].radius = 0
+        line = []  # shouldn't be needed, but just in case
 
     # Optimised Speed Section Distance Calculation:
     # (2023)
@@ -911,6 +927,40 @@ def revert_opt_points(points, geo):
         result.append(Turnpoint(lat=lat, lon=lon, type='optimised', radius=0, shape='optimised', how='optimised'))
 
     return result
+
+
+def distance_from_line(c, line: list) -> float:
+    """
+    Calculate the distance from point C to the line segment
+    Inputs:
+    p       - cPoint
+    line    - list of two cPoint objects (A and B)
+    Returns:
+    The distance from point p to the line segment AB
+    """
+    # Calculate the length of the line segment AB
+    a = line[0]
+    b = line[1]
+    ab_length = hypot(a.x - b.x, a.y - b.y)
+
+    if ab_length == 0:
+        # A and B are the same point
+        return hypot(c.x - a.x, c.y - a.y)
+
+    # Calculate the projection of C onto the line segment AB
+    t = ((c.x - a.x) * (b.x - a.x) + (c.y - a.y) * (b.y - a.y)) / (ab_length ** 2)
+
+    if t < 0:
+        # C is closest to A
+        return hypot(c.x - a.x, c.y - a.y)
+    elif t > 1:
+        # C is closest to B
+        return hypot(c.x - b.x, c.y - b.y)
+    else:
+        # C is closest to the line segment AB
+        projection_x = a.x + t * (b.x - a.x)
+        projection_y = a.y + t * (b.y - a.y)
+        return hypot(c.x - projection_x, c.y - projection_y)
 
 
 def calculate_optimised_path(points: list, ESS_index: int or None, line: list) -> tuple:

@@ -39,7 +39,7 @@ from pilot.flightresult import (
     verify_all_tracks,
 )
 from result import TaskResult, create_json_file
-from route import Turnpoint, distance, get_line, get_shortest_path, polar
+from route import Turnpoint, distance, get_line, get_shortest_path, polar, convert_turnpoints
 
 
 class Task(object):
@@ -274,6 +274,17 @@ class Task(object):
             return self.turnpoints[-1].altitude
         else:
             return None
+
+    @property
+    def has_goal_line(self):
+        if self.turnpoints:
+            return self.turnpoints[-1].shape == 'line'
+        else:
+            return False
+
+    @property
+    def has_optimised_line(self):
+        return self.formula.line_calc == 'optimised' if self.formula else False
 
     @property
     def departure(self):
@@ -912,15 +923,16 @@ class Task(object):
 
     def create_projection(self):
         """creates geo.Geo flat projection, projected turnpoints and line/semicircle bisecting segment extremes"""
-        from route import convert_turnpoints, get_line
 
         self.get_geo()
         tol, min_tol = self.formula.tolerance, self.formula.min_tolerance
         self.projected_turnpoints = convert_turnpoints(self.turnpoints, self.geo)
-        self.projected_line = convert_turnpoints(
-            get_line(self.turnpoints, self.optimised_turnpoints, tol, min_tol),
-            self.geo
-        )
+        self.projected_line = []
+        if self.has_goal_line:
+            self.projected_line = convert_turnpoints(
+                get_line(self.turnpoints, self.optimised_turnpoints, tol, min_tol, self.has_optimised_line),
+                self.geo
+            )
 
     def to_db(self):
         """Inserts new task or updates existent one"""
@@ -1370,6 +1382,14 @@ class Task(object):
 
         self.opt_dist_to_SS = sum(self.optimised_legs[0:sss_wpt])
         self.opt_dist_to_ESS = sum(self.optimised_legs[0:ess_wpt])
+        if self.has_goal_line and self.has_optimised_line:
+            # we need to calculate line
+            line = convert_turnpoints(
+                get_line(self.turnpoints, self.optimised_turnpoints, self.formula.tolerance, self.formula.min_tolerance, True),
+                self.geo
+            )
+            self.projected_line = line
+
         # work out self.opt_dist_to_SS, self.opt_dist_to_ESS, self.SS_distance
         # 2022: SS_distance has to be calculated as min(launch to ESS)
         # 2023: SS_distance calculation is dependent by GAP flavour
@@ -1491,7 +1511,9 @@ class Task(object):
             if obj.shape == 'line':
                 '''manage goal line'''
                 goal_line = []
-                ends = get_line(self.turnpoints, self.optimised_turnpoints, self.tolerance, self.formula.min_tolerance)
+                ends = get_line(self.turnpoints, self.optimised_turnpoints, 
+                                self.tolerance, self.formula.min_tolerance,
+                                self.has_optimised_line)
                 goal_line.append(tuple([ends[0].lat, ends[0].lon]))
                 goal_line.append(tuple([ends[1].lat, ends[1].lon]))
 
@@ -1624,7 +1646,7 @@ def write_map_json(task_id):
         """create tp cylinder radius adjustment to correct projection error"""
         if obj.shape == 'line':
             '''manage goal line'''
-            ends = get_line(task.turnpoints, task.optimised_turnpoints, tolerance, min_tol)
+            ends = get_line(task.turnpoints, task.optimised_turnpoints, tolerance, min_tol, task.has_optimised_line)
             goal_line = [tuple([e.lat, e.lon]) for e in ends]
             goal_line.append(gdist((obj.lat, obj.lon), goal_line[0]).meters)
             goal_line.append(calcBearing(goal_line[2][0], goal_line[2][1], goal_line[3][0], goal_line[3][1]))
