@@ -1332,9 +1332,15 @@ def _get_task_score_from_file(taskid: int, filename: str):
             else:
                 pilot['ESS'] = sec_to_time(r['ESS_time'] + result_file['info']['time_offset']).strftime("%H:%M:%S")
                 pilot['time'] = sec_to_time(r['ESS_time'] - r['SSS_time']).strftime("%H:%M:%S")
-
-            pilot['realdist'] = "" if not r['stopped_distance'] else c_round(r['stopped_distance'] / 1000, 2)
-            pilot['altbonus'] = "" if not r['stopped_altitude'] else round(r['stopped_altitude'])
+            '''stopped tasks'''
+            if r['distance'] > max(r['distance_flown'], result_file['formula']['min_dist']):
+                # we are using bonusDistance
+                pilot['realdist'] = "" if not r['stopped_distance'] or r['stopped_distance'] <= 0 else c_round(r['stopped_distance'] / 1000, 2)
+                pilot['altbonus'] = "" if not r['stopped_altitude'] else round(r['stopped_altitude'])
+            else:
+                # we are using distance flown
+                pilot['realdist'] = ""
+                pilot['altbonus'] = ""
             pilot['distance'] = c_round(r['distance'] / 1000, 2)
             pilot['speedP'] = c_round(r['time_score'], 2)
             pilot['leadP'] = c_round(r['departure_score'], 2)

@@ -1561,11 +1561,20 @@ def get_pretty_data(content: dict, result_type=None, export=False) -> dict or st
                         task_id = content['info']['id']
                         stopped = content['info']['stopped_time']
                         goal_alt = content['info']['goal_altitude']
+                        min_dist = content['formula']['min_dist']
                         if export or not r['track_file']:
                             r['name'] = f"<span class='sex-{r['sex']}'><b>{r['name']}</b></span>"
                         else:
                             r['name'] = f"<a class='sex-{r['sex']}' href='/map/{r['par_id']}-{task_id}'>" \
                                         f"<b>{r['name']}</b></a>"
+                        if stopped and r['stopped_altitude']:
+                            stopped_alt = max(0, r['stopped_altitude'] - goal_alt)
+                            if r['distance'] > max(r['distance_flown'], min_dist):
+                                r['stopped_altitude'] = f"+{stopped_alt}"
+                            elif stopped_alt > 0:
+                                r['stopped_altitude'] = f"<del>+{stopped_alt}</del>"
+                            else:
+                                r['stopped_altitude'] = ""
                         if r['penalty']:
                             p = r['penalty']
                             style = f"{'danger' if p > 0 else 'success'}"
@@ -1578,8 +1587,6 @@ def get_pretty_data(content: dict, result_type=None, export=False) -> dict or st
                         r['ESS_time'] = r['ESS_time'] if goal else f"<del>{r['ESS_time']}</del>"
                         r['speed'] = r['speed'] if goal else f"<del>{r['speed']}</del>"
                         r['ss_time'] = r['ss_time'] if goal else f"<del>{r['ss_time']}</del>"
-                        if stopped and r['stopped_altitude']:
-                            r['stopped_altitude'] = f"+{max(0, r['stopped_altitude'] - goal_alt)}"
                         # ab = ''  # alt bonus
                 results.append(r)
             pretty_content['results'] = results

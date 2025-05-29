@@ -52,11 +52,6 @@ def check_fixes(
         if not deadline:
             '''Using stop_time (stopped_time - score_back_time)'''
             deadline = task.stop_time
-        goal_altitude = task.goal_altitude or 0
-        glide_ratio = task.formula.glide_bonus or 0
-        stopped_distance = 0
-        stopped_altitude = 0
-        total_distance = 0
 
     if not livetracking:
         percentage_complete = 0
@@ -149,9 +144,8 @@ def check_fixes(
         '''
         if task.stopped_time and next_fix.rawtime > deadline and not tp.ess_done:
             result.still_flying_at_deadline = True
-            result.stopped_distance = stopped_distance
-            result.stopped_altitude = stopped_altitude
-            result.total_distance = total_distance
+            result.stopped_distance = fix_dist_flown
+            result.stopped_altitude = alt
             break
 
         '''check if task deadline has passed'''
@@ -289,21 +283,6 @@ def check_fixes(
                 '''updating best distance flown'''
                 result.distance_flown = fix_dist_flown
 
-            '''stopped task
-            ∀p : p ∈ PilotsLandedBeforeGoal :
-                bestDistance p = max(minimumDistance, 
-                                     taskDistance − min(∀trackp.pointi : shortestDistanceToGoal(trackp.pointi )
-                                     − (trackp.pointi.altitude − GoalAltitude)*GlideRatio)) 
-            ∀p :p ∈ PilotsReachedGoal : bestDistance p = taskDistance
-            '''
-            if task.stopped_time and glide_ratio and total_distance < task.opt_dist:
-                alt_over_goal = max(0, alt - goal_altitude)
-                if fix_dist_flown + glide_ratio * alt_over_goal > total_distance:
-                    '''calculate total distance with glide bonus'''
-                    stopped_distance = fix_dist_flown
-                    stopped_altitude = alt
-                    total_distance = min(fix_dist_flown + glide_ratio * alt_over_goal, task.opt_dist)
-
         '''Leading coefficient'''
         if lead_coeff and tp.start_done and not tp.ess_done:
             lead_coeff.update(result, my_fix, next_fix, dist_to_ESS)
@@ -371,6 +350,26 @@ def calculate_final_results(
         infringements, notifications, penalty = airspace.get_infringements_result(result.infringements)
         result.infringements = infringements
         result.notifications.extend(notifications)
+
+    '''stopped task'''
+    """
+    2025 Section 7 rule:
+        ∀𝑝: 𝑝 ∈ 𝑃𝑖𝑙𝑜𝑡𝑠𝐹𝑙𝑦𝑖𝑛𝑔𝐴𝑡𝑆𝑡𝑜𝑝𝑇𝑖𝑚𝑒: 𝑙𝑎𝑠𝑡𝑃𝑜𝑖𝑛𝑡𝑝 = 𝑡𝑟𝑎𝑐𝑘𝑝. 𝑝𝑜𝑖𝑛𝑡𝑇𝑎𝑠𝑘𝑆𝑡𝑜𝑝𝑇𝑖𝑚𝑒
+        ∀𝑝: 𝑝 ∈ 𝑃𝑖𝑙𝑜𝑡𝑠𝐹𝑙𝑦𝑖𝑛𝑔𝐴𝑡𝑆𝑡𝑜𝑝𝑇𝑖𝑚𝑒: 𝑎𝑙𝑡𝑖𝑡𝑢𝑑𝑒𝐵𝑜𝑛𝑢𝑠𝑝 = max (0, 𝑙𝑎𝑠𝑡𝑃𝑜𝑖𝑛𝑡𝑝. 𝑎𝑙𝑡𝑖𝑡𝑢𝑑𝑒 − 𝐺𝑜𝑎𝑙𝐴𝑙𝑡𝑖𝑡𝑢𝑑𝑒) ∗ 𝐵𝑜𝑛𝑢𝑠𝐺𝑙𝑖𝑑𝑒𝑅𝑎𝑡𝑖𝑜
+        ∀𝑝: 𝑝 ∈ 𝑃𝑖𝑙𝑜𝑡𝑠𝐹𝑙𝑦𝑖𝑛𝑔𝐴𝑡𝑆𝑡𝑜𝑝𝑇𝑖𝑚𝑒: 𝑏𝑜𝑛𝑢𝑠𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒𝑝 = min (𝑡𝑎𝑠𝑘𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒, 𝑡𝑎𝑠𝑘𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒 − 𝑠h𝑜𝑟𝑡𝑒𝑠𝑡𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒𝑇𝑜𝐺𝑜𝑎𝑙(𝑙𝑎𝑠𝑡𝑃𝑜𝑖𝑛𝑡𝑝) + 𝑎𝑙𝑡𝑖𝑡𝑢𝑑𝑒𝐵𝑜𝑛𝑢𝑠𝑝
+        ∀𝑝: 𝑝 ∈ 𝑃𝑖𝑙𝑜𝑡𝑠𝐹𝑙𝑦𝑖𝑛𝑔𝐴𝑡𝑆𝑡𝑜𝑝𝑇𝑖𝑚𝑒: 𝑆𝑐𝑜𝑟𝑒𝑑𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒𝑝 = max (𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒𝑝, 𝑏𝑜𝑛𝑢𝑠𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒𝑝)
+    """
+    if task.stopped_time and task.formula.glide_bonus and result.distance_flown < task.opt_dist:
+        goal_altitude = task.goal_altitude or 0
+        glide_ratio = task.formula.glide_bonus
+        alt_over_goal = max(0, result.stopped_altitude - goal_altitude)
+        bonus_distance = result.stopped_distance + glide_ratio * alt_over_goal
+        if bonus_distance > result.distance_flown:
+            '''update total distance with glide bonus'''
+            result.total_distance = min(bonus_distance, task.opt_dist)
+        else:
+            '''no bonus distance, use the flown distance'''
+            result.total_distance = result.distance_flown
 
 
 def pilot_can_start(task, tp, fix):

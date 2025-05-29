@@ -5,7 +5,7 @@ function populate_task(json){
     let data = json.results.filter( el => !other_types.includes(el.result_type) );
     // Rankings
     json.rankings.forEach( function(item, index) {
-      columns.push({data: 'rankings.'+item.rank_id.toString(), title: '#', name: item.rank_id.toString(), className: "text-right", defaultContent: '', visible: (index === 0) ? true : false});
+        columns.push({data: 'rankings.'+item.rank_id.toString(), title: '#', name: item.rank_id.toString(), className: "text-right", defaultContent: '', visible: (index === 0) ? true : false});
     });
     columns.push({data: 'ID', title: 'ID', className: "text-right", defaultContent: ''});
     columns.push({data: 'fai_id', title: 'FAI', className: "text-right", defaultContent: '', visible: false});
@@ -29,7 +29,7 @@ function populate_task(json){
     columns.push({data: 'speed', title: 'Kph', className: "text-right", defaultContent: ''});
     //altitude column if task is stopped
     if(json.info.stopped_time) {
-      columns.push({data: 'stopped_altitude', title: 'Alt', className: "text-right", defaultContent: ''});
+        columns.push({data: 'stopped_altitude', title: 'Alt', className: "text-right", defaultContent: ''});
     }
     columns.push({data: 'distance', title: 'Dist', className: "text-right", defaultContent: ''});
     columns.push({data: 'time_score', title: 'TimeP', className: "text-right", defaultContent: ''});
