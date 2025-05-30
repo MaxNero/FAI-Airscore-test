@@ -801,12 +801,13 @@ def get_line(turnpoints: list, optimised_turnpoints: list, tol: float = 0.001, m
         az1, az2 = az1 % 360, az2 % 360
         lon1, lat1, az = g.fwd(clon, clat, az1 - 90, ln)
         lon2, lat2, az = g.fwd(clon, clat, az1 + 90, ln)
-        # get goal area side
-        alat, alon = optimised_turnpoints[-2].lat, optimised_turnpoints[-2].lon
-        blat, blon = optimised_turnpoints[-1].lat, optimised_turnpoints[-1].lon
-        opt_bearing = calcBearing(alat, alon, blat, blon) % 360
-        if abs(opt_bearing - az2) > 90:
-            az1, az2 = az2, az1
+        if optimised_turnpoints:
+            # get goal area side
+            alat, alon = optimised_turnpoints[-2].lat, optimised_turnpoints[-2].lon
+            blat, blon = optimised_turnpoints[-1].lat, optimised_turnpoints[-1].lon
+            opt_bearing = calcBearing(alat, alon, blat, blon) % 360
+            if abs(opt_bearing - az2) > 90:
+                az1, az2 = az2, az1
         lon3, lat3, az = g.fwd(clon, clat, az1, t)
         lon4, lat4, az = g.fwd(clon, clat, az2, ln + t)
 
