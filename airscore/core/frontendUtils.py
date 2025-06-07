@@ -2661,16 +2661,21 @@ def recheck_tracks_background(task_id: int, user: str):
         if not flight:
             print('Error: IGC file not readable')
         else:
-            pilot_print = partial(print_to_sse, id=pilot.par_id, channel=user)
-            print('***************START*******************')
-            check_flight(pilot, flight, task, airspace, print=pilot_print)
-            if pilot.notifications:
-                print(f"NOTES:<br /> {'<br />'.join(n.comment for n in pilot.notifications)}")
+            try:
+                pilot_print = partial(print_to_sse, id=pilot.par_id, channel=user)
+                print('***************START*******************')
+                check_flight(pilot, flight, task, airspace, print=pilot_print)
+                if pilot.notifications:
+                    print(f"NOTES:<br /> {'<br />'.join(n.comment for n in pilot.notifications)}")
+                pilots_to_save.append(pilot)
+                data = track_result_output(pilot, task.task_id)
+                pilot_print(f'{json.dumps(data)}|result')
+                print('***************END****************')
+            except AttributeError as e:
+                print(f"Error processing {pilot.ID}: it seems Track is lacking takeoff or landing fix: {e}")
+            except Exception as e:
+                print(f"Error processing {pilot.ID} {pilot.name}: {e}")
 
-            pilots_to_save.append(pilot)
-            data = track_result_output(pilot, task.task_id)
-            pilot_print(f'{json.dumps(data)}|result')
-            print('***************END****************')
     print("*****************re-processed all tracks********************")
 
     '''save all succesfully processed pilots to database'''
