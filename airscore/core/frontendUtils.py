@@ -2649,7 +2649,9 @@ def recheck_tracks_background(task_id: int, user: str):
     task.get_pilots()
     par_ids = get_outdated_tracks(task_id)
     outdated_results = filter(lambda x: x.par_id in par_ids, task.results)
-    FlightParsingConfig = igc_parsing_config_from_yaml(task.igc_config_file)
+    # FlightParsingConfig = igc_parsing_config_from_yaml(task.igc_config_file)
+    # temporary fix to prevent server hang.
+    FlightParsingConfig = igc_parsing_config_from_yaml('_overide')
     airspace = None if not task.airspace_check else AirspaceCheck.from_task(task)
     for pilot in outdated_results:
         # pilot = FlightResult.read(par_id=par, task_id=task_id)
