@@ -79,10 +79,12 @@ def airspace_info(record):
 
 
 def convert_height(height_string):
-    """Converts feet in metres, GND into 0. leaves FL essentialy untouched. returns a string that can be used in
+    """Converts feet in metres, GND into 0. leaves FL essentially untouched. returns a string that can be used in
     labels etc such as "123 m", a int of height such as 123 and a unit such as "m" """
     info = ''
     meters = None
+
+    height_string = height_string.upper().strip(' ').replace(' ', '')
 
     if height_string == '0':
         return '0', 0, "m"
@@ -91,13 +93,14 @@ def convert_height(height_string):
         height = int(re.sub(r"[^0-9]", "", height_string))
         return height_string, height, "FL"
 
-    elif re.search(r"ft", height_string):
+    elif re.search(r"FT", height_string):
         if len(re.sub(r"[^0-9]", "", height_string)) > 0:
             feet = int(re.sub(r"[^0-9]", "", height_string))
             meters = round(feet * Ft_in_meters, 1)
-            info = f"{height_string}/{meters} m"
+            info = f"{feet} ft/{meters} m"
 
-    elif re.search(r"m", height_string) or re.search(r"MSL", height_string):
+    # elif re.search(r"M", height_string) or re.search(r"MSL", height_string):
+    elif re.search(r"M", height_string):
         if len(re.sub(r"[^0-9]", "", height_string)) > 0:
             meters = int(re.sub(r"[^0-9]", "", height_string))
             info = f"{meters} m"
@@ -108,7 +111,13 @@ def convert_height(height_string):
         )
         info = "GND / 0 m"
     else:
-        return height_string, None, "Unknown height unit"
+        if len(re.sub(r"[^0-9]", "", height_string)) > 0:
+            # we assume feet
+            feet = int(re.sub(r"[^0-9]", "", height_string))
+            meters = round(feet * Ft_in_meters, 1)
+            info = f"{feet} ft/{meters} m"
+        else:
+            return height_string, None, "Unknown height unit"
 
     return info, meters, "m"
 
