@@ -186,6 +186,11 @@ Task Settings
               aria-expanded='false' aria-controls='import_task'>
         Import
       </button>
+      {% if task_info.track_source %}
+      <button id='send_task_btn' class='btn btn-primary mr-4 ' onclick='send_task_to_ext_server();' type='button'>
+        Send to {{ task_info.track_source }}
+      </button>
+      {% endif %}
     </section>
     <div class='tab-row column-wrap collapse' id='import_task'>
       <section class="row-wrap">

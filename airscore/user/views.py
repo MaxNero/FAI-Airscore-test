@@ -1284,6 +1284,17 @@ def _get_task_result_files(taskid: int):
     return frontendUtils.get_task_result_files(int(taskid), compid, int(offset))
 
 
+@blueprint.route('/_send_task_to_ext_server/<int:taskid>', methods=['POST'])
+@login_required
+@editor_required
+def _send_task_to_ext_server(taskid: int):
+    from sources import flymaster
+    """sends a task to the external server"""
+    status_code = flymaster.send_task(taskid)
+    resp = jsonify(success=True, status_code=status_code)
+    return resp
+
+
 @blueprint.route('/_send_telegram_update/<int:taskid>', methods=['POST'])
 @login_required
 def _send_telegram_update(taskid: int):

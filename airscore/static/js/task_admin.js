@@ -290,6 +290,37 @@ function delete_all_tp(){
   });
 }
 
+function send_task_to_ext_server(){
+  console.log('task is set: ' + task.isset);
+  if ( !task.isset ) {
+    $('#send_task_btn').addClass('btn-danger').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-warning');
+    create_flashed_message('Task is not ready yet', 'danger');
+    return;
+  }
+  $('#send_task_btn').addClass('btn-warning').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-danger');
+  $.ajax({
+    type: "POST",
+    url: '/users/_send_task_to_ext_server/'+ taskid,
+    contentType:"application/json",
+    dataType: "json",
+    success: function (response) {
+      console.log('response: ' + response);
+      if ( !response.success ) {
+        $('#send_task_btn').addClass('btn-danger').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-warning');
+        create_flashed_message('There was an Error trying to send Task to Flymaster', 'danger');
+      }
+      else if ( response.status_code != 200 ) {
+        $('#send_task_btn').addClass('btn-danger').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-warning');
+        create_flashed_message('Flymaster response was not what expected', 'danger');
+      }
+      else {
+        $('#send_task_btn').addClass('btn-success').removeClass('btn-primary').removeClass('btn-danger').removeClass('btn-warning');
+        create_flashed_message('Task successfully sent to Flymaster.', 'success');
+        }
+    }
+  });
+}
+
 function confirm_delete(tp_num, tpid, partial_distance) {
   var x = tp_num;
   var myHeading = "<p>Are you sure you want to delete Turnpoint ";
