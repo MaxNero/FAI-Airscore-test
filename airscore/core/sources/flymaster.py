@@ -114,6 +114,31 @@ def send_task(task_id: int) -> int:
     return 0
 
 
+def get_task(task_id: int) -> dict:
+    from livetracking import LiveTask
+    import jsonpickle
+    t = LiveTask.read(task_id)
+
+    grp = t.ext_server_id
+    token = t.ext_server_token
+    url = f'https://wlb.flymaster.net/getGroupTask.php?grpid={grp}&token={token}&format=xctsk'
+
+    try:
+        response = requests.get(url)
+        # 4. Check the response
+        if response.status_code == 200:  # Or another success code (e.g., 201 for created)
+            print("GET request successful!")
+            print("Response content:", response.text)  # Or response.json() if the response is JSON
+            if len(response.text):
+                return jsonpickle.decode(response.text)
+        else:
+            print(f"GET request failed. Status code: {response.status_code}")
+            print("Response content:", response.text)
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+    return {}
+
+
 def get_zipfile(task, temp_folder):
     """"""
     from os import path

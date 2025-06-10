@@ -1218,6 +1218,17 @@ def _upload_task(taskid: int):
             return resp
 
 
+@blueprint.route('/_import_task_from_ext_server/<int:taskid>', methods=['POST'])
+@login_required
+def _import_task_from_ext_server(taskid: int):
+    """gets task information from external server, processes it and saves the task to the DB"""
+    print(f"Importing task {taskid} from external server: {session['track_source']}")
+    if request.method == "POST":
+        success = frontendUtils.import_task_from_ext_server(taskid, session['track_source'])
+        resp = jsonify(success=success)
+        return resp
+
+
 @blueprint.route('/_upload_track_zip/<int:taskid>', methods=['POST'])
 @login_required
 @editor_required

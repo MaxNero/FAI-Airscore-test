@@ -190,6 +190,9 @@ Task Settings
       <button id='send_task_btn' class='btn btn-primary mr-4 ' onclick='send_task_to_ext_server();' type='button'>
         Send to {{ task_info.track_source }}
       </button>
+      <button id='import_ext_btn' class='btn btn-primary mr-4 ' onclick='import_task_from_ext_server();' type='button'>
+        Import Task from {{ task_info.track_source }}
+      </button>
       {% endif %}
     </section>
     <div class='tab-row column-wrap collapse' id='import_task'>
@@ -201,7 +204,7 @@ Task Settings
         </span>
         <button class='col col-lg-2 btn btn-primary mr-4 ' id='task_file_button'>Browse...</button>
         <input id='task_fileupload' type='file' size='chars' class='custom-file-input'
-               oninput='filesize(this);' data-url='/users/_upload_task/{{ taskid }}' name='track_file'>
+              oninput='filesize(this);' data-url='/users/_upload_task/{{ taskid }}' name='track_file'>
       </section>
       <section class="row-wrap" id="copy_wpts_section">
         <span class="col col-lg-2 font-weight-bold text-primary mr-3 mt-1 mb-1">Get Route from: </span>

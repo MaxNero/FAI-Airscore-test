@@ -2707,6 +2707,35 @@ def get_task_from_file(task_id: int, file) -> bool:
     return True
 
 
+def import_task_from_ext_server(task_id: int, server: str) -> bool:
+    """get a task definition from external server, e.g. FLYMASTER LIVE"""
+    from sources import xctrack, flymaster
+    from route import delete_all_turnpoints
+    from task import Task
+
+    print(f"ext server: {server}")
+
+    if 'flymaster' in server.lower():
+        # xctrack format json
+        data = flymaster.get_task(task_id)
+        task_info = xctrack.read_task(data)
+    elif 'xcontest' in server.lower():
+        # not implemented yet
+        return False
+    else:
+        return False
+
+    print(f"task info: {task_info}")
+    if task_info:
+        try:
+            delete_all_turnpoints(task_id)
+            Task.update_from_dict(task_id, task_info)
+            return True
+        except Exception as e:
+            print(f'Error while importing Task info: {e}')
+    return False
+
+
 def create_ftv_bracket(comp_id: int) -> list:
     from comp import Comp
     from task import Task

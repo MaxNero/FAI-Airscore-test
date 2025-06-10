@@ -321,6 +321,27 @@ function send_task_to_ext_server(){
   });
 }
 
+function import_task_from_ext_server(){
+  $('#import_ext_btn').addClass('btn-warning').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-danger');
+  $.ajax({
+    type: "POST",
+    url: '/users/_import_task_from_ext_server/'+ taskid,
+    contentType:"application/json",
+    dataType: "json",
+    success: function (response) {
+      if ( !response.success ) {
+        $('#import_ext_btn').addClass('btn-danger').removeClass('btn-primary').removeClass('btn-success').removeClass('btn-warning');
+        create_flashed_message('There was an Error trying to import Task from Flymaster', 'danger');
+      }
+      else {
+        $('#import_ext_btn').addClass('btn-success').removeClass('btn-primary').removeClass('btn-danger').removeClass('btn-warning');
+        create_flashed_message('Task successfully imported from Flymaster.', 'success');
+      };
+      get_turnpoints();
+    }
+  });
+}
+
 function confirm_delete(tp_num, tpid, partial_distance) {
   var x = tp_num;
   var myHeading = "<p>Are you sure you want to delete Turnpoint ";
