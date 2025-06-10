@@ -5,7 +5,7 @@ Use:    from db.conn import db_session
 Airscore
 Antonio Golfari, Stuart Mackintosh - 2020
 """
-
+from flask.signals import appcontext_tearing_down
 from contextlib import contextmanager
 
 from Defines import DATABASE, MYSQLHOST, MYSQLPASSWORD, MYSQLUSER
@@ -56,5 +56,14 @@ def db_session():
         raise
     finally:
         # session.expunge_all()
-        # session.close()
+        # session.remove()
         ''''''
+
+
+def _shutdown_session(sender, **extra):
+    Session.remove()
+    print("[DEBUG] Teardown: normal on db")
+
+
+# registers for *every* Flask app’s teardown
+appcontext_tearing_down.connect(_shutdown_session)
