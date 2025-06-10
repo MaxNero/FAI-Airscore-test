@@ -277,7 +277,7 @@ def points_weight(task):
                 task.arr_weight *= 2  # (1 - dist_weight) / 4
         ''' Departure Weight'''
         if task.formula.formula_departure != 'off':
-            task.dep_weight = (1 - task.dist_weight) * formula.lead_factor
+            task.dep_weight = (1 - task.dist_weight) * LeadingTimeRatio
 
     elif comp_class == 'PG':
         """
