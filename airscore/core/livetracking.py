@@ -603,7 +603,7 @@ class LiveTracking(object):
                 d = next(el for el in self.result['data'] if el['par_id'] == p.par_id)
                 p.update_from_result(d)
                 print(f"RUN, from json")
-                print(f"{p.name} (live {p.live_id}: first {p.first_time}, last (next live request time) {p.last_time}, landing {p.landing_time}")
+                print(f"{p.name} (ID {p.ID}: first {p.first_time}, last (next live request time) {p.last_time}, landing {p.landing_time}")
 
             cycle_starting_time = self.now
             print(f"cycle starting time: {epoch_to_string(self.now, self.task.time_offset)}")  # Local Time
@@ -660,19 +660,22 @@ def get_livetracks(task: LiveTask, pilots: list, timestamp, interval: int = defa
 
     request = {}
     if task.track_source.lower() == 'flymaster':
-        print(f'pilots to get: {len(pilots)}')
+        print(f'get_livetracks - pilots to get: {len(pilots)}')
         for p in pilots:
-            live = int(p.live_id)
+            # changed format, we are now using pilot ID instead of live_id,
+            # so we do not have issues when trackers get changed in the takeoff
+            pil_id = p.ID
             '''get epoch time'''
             if not p.first_time:
                 '''pilot not launched yet'''
                 last_time = timestamp - 2 * interval
             else:
                 last_time = int(time.mktime(task.date.timetuple()) + (p.last_time or task.window_open_time))
-            request[live] = last_time
+            request[pil_id] = last_time
+
         grp = task.ext_server_id
         token = task.ext_server_token
-        url = FM_LIVE + f"grp={grp}&token={token}&trackers={jsonpickle.encode(request)}"
+        url = FM_LIVE + f"grp={grp}&token={token}&trkref=CompeID&trackers={jsonpickle.encode(request)}"
         if request:
             try:
                 response = requests.get(url)
@@ -700,8 +703,8 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
     midnight = int(time.mktime(task.date.timetuple()))
     alt_source = 'GPS' if task.formula.scoring_altitude is None else task.formula.scoring_altitude
     alt_compensation = 0 if alt_source == 'GPS' or task.QNH == 1013.25 else task.alt_compensation
-    for live_id, fixes in response.items():
-        pil = next((p for p in pilots if p.live_id == live_id), None)
+    for pID, fixes in response.items():
+        pil = next((p for p in pilots if str(p.ID) == str(pID)), None)
         if not pil:
             continue
         if len(fixes) < config.min_fixes:
