@@ -22,6 +22,7 @@ from redis import Redis
 import rq
 from flask_sse import sse
 from airscore.user.models import User
+from db.conn import Session
 
 
 def create_app(config_object="airscore.settings"):
@@ -49,6 +50,13 @@ def create_app(config_object="airscore.settings"):
         with app.app_context():
             app.config['admin_exists'] = User.admin_exists()
         create_app_folders()
+
+    @app.teardown_appcontext
+    def remove_session(exception=None):
+        """ our app call is ending"""
+        Session.remove()
+        print("[DEBUG] Teardown: normal exit")
+
     return app
 
 
@@ -129,3 +137,5 @@ def create_app_folders():
                     Defines.TEMPFILES]:
         if not Path(app_dir).is_dir():
             Path(app_dir).mkdir(mode=0o755, parents=True)
+
+
