@@ -109,11 +109,11 @@ Competition Settings
             </div>
         </section>
         <section class="tab-row row-wrap form">
-            {{ render_field(compform.min_dist, size=5, disabled=readonly) }}
-            {{ render_field(compform.nom_dist, size=5, disabled=readonly) }}
-            {{ render_field(compform.nom_time, size=5, disabled=readonly) }}
-            {{ render_field(compform.nom_launch, size=5, disabled=readonly) }}
-            {{ render_field(compform.nom_goal, size=5, disabled=readonly) }}
+            {{ render_field(compform.min_dist, size=5, preset=formula_preset.min_dist, disabled=readonly) }}
+            {{ render_field(compform.nom_dist, size=5, preset=formula_preset.nominal_dist, disabled=readonly) }}
+            {{ render_field(compform.nom_time, size=5, preset=formula_preset.nominal_time, disabled=readonly) }}
+            {{ render_field(compform.nom_launch, size=5, preset=formula_preset.nominal_launch, disabled=readonly) }}
+            {{ render_field(compform.nom_goal, size=5, preset=formula_preset.nominal_goal, disabled=readonly) }}
         </section>
         <section class="tab-row row-wrap form">
             {{ render_field(compform.scoring_altitude, disabled=readonly) }}

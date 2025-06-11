@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """User forms."""
 from datetime import date
+from decimal import Decimal
 
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, IntegerField, SelectField, DecimalField, BooleanField, SubmitField, \
@@ -190,7 +191,7 @@ class CompForm(FlaskForm):
     help_lead_factor = "Starting with GAP2023 this is called LeadingTimeRatio. " \
                        "This is a multiplier factor that influences the ratio between leading and time points. " \
                        "Changing this parameter will affect considerably the results, so it is recommended " \
-                       "to leave the default value."
+                       "to leave the default value (PG = 0.26, HG = 0.175)."
 
     comp_name = StringField('Competition Name')
     comp_code = StringField('Short name', render_kw=dict(maxlength=8), description='An abbreviated name (max 8 chars) '
@@ -261,20 +262,20 @@ class CompForm(FlaskForm):
     formula_time = SelectField('Time points', choices=[('on', 'On'), ('off', 'Off')])
 
     scoring_altitude = SelectField('Scoring Altitude', choices=[('GPS', 'GPS'), ('QNH', 'QNH')])
-    lead_factor = DecimalField('Leadfactor', places=2, default=1, description=help_lead_factor)
+    lead_factor = DecimalField('Leadfactor (LTR)', places=3, default=Decimal('1.000'), validators=[NumberRange(min=0, max=1)], description=help_lead_factor)
     no_goal_penalty = IntegerField('No goal penalty (%)', validators=[NumberRange(min=0, max=100)], default=100)
 
-    tolerance = DecimalField('Turnpoint radius tolerance %', places=1, default=0.1)
+    tolerance = DecimalField('Turnpoint radius tolerance %', places=1, default=Decimal('0.1'))
     min_tolerance = IntegerField('Minimum turnpoint tolerance (m)')
-    glide_bonus = DecimalField('Glide bonus', validators=[InputRequired()], places=1, default=0)
-    arr_alt_bonus = DecimalField('Height bonus', validators=[InputRequired()], default=0)
+    glide_bonus = DecimalField('Glide bonus', validators=[InputRequired()], places=1, default=Decimal(4.0))
+    arr_alt_bonus = DecimalField('Height bonus', validators=[InputRequired()], default=Decimal(0.0))
     arr_max_height = IntegerField('ESS height limit - upper', validators=[Optional(strip_whitespace=True)])
     arr_min_height = IntegerField('ESS height limit - lower', validators=[Optional(strip_whitespace=True)])
     validity_min_time = IntegerField('Minimum time (mins)')
     score_back_time = IntegerField('Scoreback time (mins)', description=help_score_back)
     max_JTG = IntegerField("Max Jump the gun (sec)", default=0)
     JTG_penalty_per_sec = DecimalField('Jump the gun penalty per second',
-                                       validators=[Optional(strip_whitespace=True)], places=2, default=0)
+                                       validators=[Optional(strip_whitespace=True)], places=2, default=Decimal(0.0))
     check_launch = BooleanField('Check launch', description='If we check pilots leaving launch - i.e. launch is like '
                                                             'an exit cylinder. Individual tasks will have this '
                                                             'as a default but can be overridden.')
@@ -311,7 +312,7 @@ class TaskForm(FlaskForm):
     comment = StringField('Comment', description='Sometimes you may wish to make a comment that will show up'
                                                  ' in the competition overview page. e.g. "task stopped at 14:34"')
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()], default=date.today)
-    task_type = SelectField('Type', choices=[('race', 'Race'), ('elapsed time', 'Elapsed time')],
+    task_type = SelectField('Type', choices=[('race', 'Race'), ('elapsed time', 'Time Trial')],
                             validators=[DataRequired()], default='race')
     region = SelectField('Region', id='select_region', choices=[(0, ' -')], default=0, coerce=int,
                          validators=[Optional()], description='Determines the Waypoint listed, and the airspace used')
@@ -342,7 +343,7 @@ class TaskForm(FlaskForm):
     # airspace
     airspace_check = BooleanField('Airspace checking')
     # openair_file = SelectField('Openair file', choices=[(1,'1'), (2,'2')])
-    QNH = DecimalField('QNH', validators=[NumberRange(min=900, max=1100)], places=2, default=1013.25)
+    QNH = DecimalField('QNH', validators=[NumberRange(min=900, max=1100)], places=2, default=Decimal('1013.25'))
 
     # formula overides
     formula_distance = SelectField('Distance points', choices=[('on', 'On'), ('difficulty', 'Difficulty'),
@@ -352,10 +353,10 @@ class TaskForm(FlaskForm):
     formula_departure = SelectField('Departure points', choices=[('leadout', 'Leadout'), ('departure', 'Departure'),
                                                                  ('off', 'Off')])
     formula_time = SelectField('Time points', choices=[('on', 'On'), ('off', 'Off')])
-    arr_alt_bonus = DecimalField('Height bonus', validators=[InputRequired()], default=0)
+    arr_alt_bonus = DecimalField('Height bonus', validators=[InputRequired()], default=Decimal('0.00'))
     max_JTG = IntegerField("Max Jump the gun (sec)", default=0)
     no_goal_penalty = IntegerField('No goal penalty (%)', validators=[InputRequired()], default=100)
-    tolerance = DecimalField('Turnpoint radius tolerance (%)', places=1)
+    tolerance = DecimalField('Turnpoint radius tolerance (%)', places=1, default=Decimal(0.1))
 
     submit = SubmitField('Save')
 
@@ -586,7 +587,8 @@ class CompRankingForm(FlaskForm):
     rank_name = StringField('Name', validators=[DataRequired(), Length(min=1, max=40)], description=name_desc)
     rank_type = SelectField('Ranking Type', choices=[('overall', 'Overall'), ('cert', 'Certification'),
                                                      ('birthdate', 'Birthdate'), ('female', 'Female'),
-                                                     ('nat', 'Nationality'), ('custom', 'Custom')], default='cert')
+                                                     ('nat', 'Nationality'), ('country', 'Filtered Country'),
+                                                     ('custom', 'Custom')], default='cert')
     cert_id = NonValidatingSelectField('Certification', validators=[Optional(strip_whitespace=True)], default=None)
     min_date = DateField('Starting from', format='%Y-%m-%d', validators=[Optional(strip_whitespace=True)], default=None)
     max_date = DateField('Up to', format='%Y-%m-%d', validators=[Optional(strip_whitespace=True)], default=None)
@@ -598,28 +600,46 @@ class CompRankingForm(FlaskForm):
 
 class AirspaceCheckForm(FlaskForm):
     name_desc = 'Required, max 40 characters'
+    help_notification_distance = 'Distance from airspace below which  to get a notification during tracklog validation'
+    help_double_step = 'Permits to have two different penalty gradients with a boundary between inner and outer limits. Boundary penalty MUST be lower than full (inner) penalty.'
+    help_outer_limit = 'Outer limit is the distance from the airspace where the penalty starts. Negative values mean a distance from the border inside the forbidden zone.'
+    help_boundary = 'Boundary is the distance from the airspace where the penalty changes gradient, when double step is selected. Boundary value needs to be between outer and inner values. Negative values mean a distance from the border inside the forbidden zone.'
+    help_inner_limit = 'Inner limit is the distance from the airspace where the penalty reaches the max value. Negative values mean a distance from the border inside the forbidden zone.'
+    help_boundary_penalty = 'Penalty at the boundary between penalty gradients'
+    help_max_penalty = 'Maximum penalty at the inner limit. If Double Step is selected, this value MUST be higher than Boundary Penalty value.'
     notification_distance = IntegerField('Proximity Notification Distance (m.)', default=100,
-                                         validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
+                                         validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                                         description=help_notification_distance)
     function = SelectField('Function Type', default='linear',
                            choices=[('linear', 'Linear'), ('non-linear', 'Progressive')])
-    double_step = BooleanField('Double Step', default=0)
+    double_step = BooleanField('Double Step', default=0, description=help_double_step)
     h_v = BooleanField('Different Vertical Limits', default=0)
     h_outer_limit = IntegerField('Horiz. Outer Limit (m.)', default=50,
-                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
+                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                                 description=help_outer_limit)
     h_boundary = IntegerField('Horiz. Boundary (m.)', default=0,
-                              validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
+                              validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                              description=help_boundary)
     h_inner_limit = IntegerField('Horiz. Inner Limit (m.)', default=-30,
-                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
-    h_boundary_penalty = SelectField('Boundary Penalty', choices=percentage_choices, default=0.2)
-    h_max_penalty = SelectField('Full Penalty', choices=percentage_choices, default=1)
+                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                                 description=help_inner_limit)
+    h_boundary_penalty = SelectField('Boundary Penalty', choices=percentage_choices, default=0.2,
+                                     description=help_boundary_penalty)
+    h_max_penalty = SelectField('Full Penalty', choices=percentage_choices, default=1,
+                                description=help_max_penalty)
     v_outer_limit = IntegerField('Vert. Outer Limit (m.)', default=50,
-                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
+                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                                 description=help_outer_limit)
     v_boundary = IntegerField('Vert. Boundary (m.)', default=0,
-                              validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
+                              validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                              description=help_boundary)
     v_inner_limit = IntegerField('Vert. Inner Limit (m.)', default=-30,
-                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)])
-    v_boundary_penalty = SelectField('Boundary Penalty', choices=percentage_choices, default=0.2)
-    v_max_penalty = SelectField('Full Penalty', choices=percentage_choices, default=1)
+                                 validators=[Optional(strip_whitespace=True), NumberRange(min=-100, max=999)],
+                                 description=help_inner_limit)
+    v_boundary_penalty = SelectField('Boundary Penalty', choices=percentage_choices, default=0.2,
+                                     description=help_boundary_penalty)
+    v_max_penalty = SelectField('Full Penalty', choices=percentage_choices, default=1,
+                                description=help_max_penalty)
 
     submit = SubmitField('Save')
 

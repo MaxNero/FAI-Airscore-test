@@ -576,15 +576,20 @@ def comp_settings_admin(compid: int):
         compform.external.data = comp.external
         newtaskform.task_region.choices, _ = frontendUtils.get_region_choices(compid)
         formulas = [(x, x.upper()) for x in list_formulas().get(comp.comp_class)]
-        '''cope with external or converted events with invalid formulas'''
+        '''cope with external, converted or old events with invalid formulas'''
         if formula.formula_name not in (el[0] for el in formulas):
-            value = formula.formula_name
-            if comp.external:
-                text = formula.formula_name
-            else:
-                text = ' ---'
-                flash(f"Please select a valid Scoring Formula from list and Save.", category='warning')
-            formulas.append((value, text))
+            all_formulas = [(x, x.upper()) for x in list_formulas().get('ALL')]
+            other = next((el for el in all_formulas if el[0] == formula.formula_name), None)
+            if not other:
+                value = formula.formula_name
+                if comp.external:
+                    text = formula.formula_name
+                else:
+                    text = ' ---'
+                    flash(f"Please select a valid Scoring Formula from list and Save.", category='warning')
+                other = (value, text)
+            formulas.append(other)
+
         compform.formula.choices = formulas
 
         if (current_user.id not in ids) and (current_user.access not in ('admin', 'manager')):
@@ -964,7 +969,7 @@ def _change_comp_category():
 def _update_formula_adv_settings():
     data = request.json
     formula, preset = frontendUtils.get_comp_formula_preset(data['compid'], data['formula'], data['category'])
-    form = CompForm(obj=formula)
+    form = CompForm(formula)
     form.lead_factor.data = 1 if formula.lead_factor is None else formula.lead_factor  # should not be None
     form.no_goal_penalty.data = int(formula.no_goal_penalty * 100)
     form.tolerance.data = formula.tolerance * 100

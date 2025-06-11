@@ -58,7 +58,7 @@ CREATE TABLE `CompObjectView` (
 ,`formula_distance` enum('on','difficulty','off')
 ,`formula_arrival` enum('position','time','off')
 ,`formula_departure` enum('leadout','departure','off')
-,`lead_factor` decimal(4,2)
+,`lead_factor` decimal(4,3)
 ,`formula_time` enum('on','off')
 ,`no_goal_penalty` decimal(4,3)
 ,`glide_bonus` decimal(4,2)
@@ -219,7 +219,7 @@ CREATE TABLE `TaskFormulaView` (
 ,`formula_departure` enum('leadout','departure','off')
 ,`formula_arrival` enum('position','time','off')
 ,`formula_time` enum('on','off')
-,`lead_factor` decimal(4,2)
+,`lead_factor` decimal(4,3)
 ,`no_goal_penalty` decimal(4,3)
 ,`glide_bonus` decimal(4,2)
 ,`tolerance` decimal(6,5)
@@ -446,7 +446,7 @@ CREATE TABLE `tblForComp` (
   `formula_distance` enum('on','difficulty','off') NOT NULL DEFAULT 'on',
   `formula_arrival` enum('position','time','off') NOT NULL DEFAULT 'off',
   `formula_departure` enum('leadout','departure','off') NOT NULL DEFAULT 'leadout',
-  `lead_factor` decimal(4,2) NOT NULL DEFAULT '1.00',
+  `lead_factor` decimal(4,3) NOT NULL DEFAULT '1.00',
   `formula_time` enum('on','off') NOT NULL DEFAULT 'on',
   `no_goal_penalty` decimal(4,3) NOT NULL DEFAULT '1.000',
   `glide_bonus` decimal(4,2) NOT NULL DEFAULT '4.00',
