@@ -665,12 +665,9 @@ def get_livetracks(task: LiveTask, pilots: list, timestamp, interval: int = defa
             # changed format, we are now using pilot ID instead of live_id,
             # so we do not have issues when trackers get changed in the takeoff
             pil_id = p.ID
-            '''get epoch time'''
-            if not p.first_time:
-                '''pilot not launched yet'''
-                last_time = timestamp - 2 * interval
-            else:
-                last_time = int(time.mktime(task.date.timetuple()) + (p.last_time or task.window_open_time))
+            ''' until we get data from the pilot we will keep requesting the positions from the window open time '''
+            last_time = int(time.mktime(task.date.timetuple()) + (p.last_time or task.window_open_time))
+            print(f"DEBUG last_time {last_time}")
             request[pil_id] = last_time
 
         grp = task.ext_server_id
