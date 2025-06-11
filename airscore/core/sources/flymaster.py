@@ -69,15 +69,15 @@ def get_zip(date, login_name, password, zip_file):
 
 def send_task(task_id: int) -> int:
     from livetracking import LiveTask
-    import datetime
     import jsonpickle
     t = LiveTask.read(task_id)
     wpts = []
-    midnight = datetime.datetime.min
-    time_after_seconds = midnight + datetime.timedelta(seconds=t.start_time) + datetime.timedelta(seconds=t.time_offset)
-    hours = time_after_seconds.hour
-    minutes = time_after_seconds.minute
-    time = f'{hours:02d}{minutes:02d}'
+    # create all timings as str 'HH:MM'
+    window_time = seconds_to_string(t.window_open_time, t.time_offset)
+    window_close_time = seconds_to_string(t.window_close_time, t.time_offset)
+    start_time = seconds_to_string(t.start_time, t.time_offset)
+    start_close_time = seconds_to_string(t.start_close_time, t.time_offset)
+    deadline = seconds_to_string(t.task_deadline, t.time_offset)
     interval = '' if not t.SS_interval else int(t.SS_interval / 60)
     start_number = '' if not t.SS_interval else t.start_iteration + 1
     FM = 'https://wlb.flymaster.net/createTask.php'
@@ -92,7 +92,8 @@ def send_task(task_id: int) -> int:
             'Size': pt.radius / 1000,  # Flymaster needs radius in Km
             'Type': 0 if pt.type == 'launch' else 1 if pt.type == 'speed' else 3 if pt.type == 'waypoint' 
                 else 5 if pt.type == 'endspeed' else 4 if (pt.type == 'goal' and pt.shape == 'circle') else 6,
-            'Time': time if pt.type == 'speed' else '',
+            'Time': window_time if pt.type == 'launch' else start_time if pt.type == 'speed' else deadline if pt.type == 'endspeed' else '',
+            'EndTime': window_close_time if pt.type == 'launch' else start_close_time if pt.type == 'speed' else '',
             'NumStarts': start_number if pt.type == 'speed' else '',
             'StartIntervals': interval if pt.type == 'speed' else '',
         }
@@ -155,3 +156,12 @@ def get_zipfile(task, temp_folder):
 
     get_zip(zipfile)
     return zipfile
+
+
+def seconds_to_string(seconds: int, offset: int) -> str:
+    import datetime
+    midnight = datetime.datetime.min
+    time_after_seconds = midnight + datetime.timedelta(seconds=seconds) + datetime.timedelta(seconds=offset)
+    hours = time_after_seconds.hour
+    minutes = time_after_seconds.minute
+    return f'{hours:02d}{minutes:02d}'

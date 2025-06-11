@@ -44,15 +44,27 @@ def read_task(data: dict) -> dict:
                         task_info['start_iteration'] = len(data['sss']['timeGates']) - 1
                     print(f"start: {task_info['start_time']}")
                     # xctrack file does not have launch window info
-                    task_info['start_close_time'] = task_info['start_time'] + 3600
                     task_info['window_open_time'] = task_info['start_time'] - 3600
                     task_info['window_close_time'] = task_info['start_time']
-                    print(f"s close: {task_info['start_close_time']}")
-                    print(f"w open: {task_info['window_open_time']}")
-                    print(f"w close: {task_info['window_close_time']}")
+                if data['sss'].get('timeClose'):
+                    task_info['start_close_time'] = utils.get_time(data['sss']['timeClose'])
+                elif task_info['start_time']:
+                    task_info['start_close_time'] = task_info['start_time'] + 3600
+
+            if data.get('goal') and data['goal'].get('deadline'):
+                task_info['task_deadline'] = utils.get_time(data['goal']['deadline'])
+            elif task_info['start_time']:
                 task_info['task_deadline'] = task_info['start_time'] + 3600 * 4 # 4 hours from start by default
-                if data.get('goal') and data['goal'].get('deadline'):
-                    task_info['task_deadline'] = utils.get_time(data['goal']['deadline'])
+
+            if data.get('takeoff'):
+                if data['takeoff'].get('timeOpen'):
+                    task_info['window_open_time'] = utils.get_time(data['takeoff']['timeOpen'])
+                if data['takeoff'].get('timeClose'):
+                    task_info['window_close_time'] = utils.get_time(data['takeoff']['timeClose'])
+
+            print(f"s close: {task_info['start_close_time']}")
+            print(f"w open: {task_info['window_open_time']}")
+            print(f"w close: {task_info['window_close_time']}")
 
             # task_info['task_deadline'] = utils.get_time(data['goal']['deadline'])
             task_info['route'] = []
@@ -60,8 +72,8 @@ def read_task(data: dict) -> dict:
                 w = el['waypoint']
                 wpt = dict(
                     num=idx,
-                    name=w['description'],
-                    description=w['name'],
+                    name=w['name'],
+                    description=w['description'],
                     lat=w['lat'], lon=w['lon'],
                     altitude=int(w['altSmoothed']),
                     radius=int(el['radius']),
@@ -91,6 +103,7 @@ def read_task(data: dict) -> dict:
             raise
         except Exception as e:
             print(f"Error reading task data: {e}")
+            raise
     else:
         print("No task data provided")
 
