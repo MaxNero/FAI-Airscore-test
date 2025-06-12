@@ -615,23 +615,24 @@ class LiveTracking(object):
                 associate_livetracks(self.task, self.flying_pilots, response, cycle_starting_time)
                 print(f'{self.now}: -- Checking tracks ...')
 
-                for p in self.flying_pilots_with_new_fixes:
-                    print(f"* {p.name}: getting to live check")
-                    check_livetrack(result=p, task=self.task, airspace=self.airspace)
-                    print(f"after check_livetrack in run")
-                    print(f"{p.name} first_time: {p.first_time}, last_time: {p.last_time}, live comment: {p.live_comment}")
-                    if (p.landing_time or p.goal_time) and p.track_id is None:
-                        '''pilot landed or made goal, save track result'''
-                        print(f"{p.name} before track saving: {p.result_type}, live comment: {p.live_comment}")
-                        save_livetrack_result(p, self.task, self.airspace)
-                        valid_results.append(track_result_output(p, self.task.task_id))
-                        if p.track_id:
-                            print(f"{p.name}: Track saved: track_id: {p.track_id}")
-                        else:
-                            #error saving the db record, usually for altitude out of range
-                            print(f"{p.name}: error saving Track. track_id: {p.track_id}")
-                        print(f"result_type: {p.result_type}, live comment: {p.live_comment}")
-                        p.live_comment = 'landed'
+                for p in self.flying_pilots:
+                    if len(p.livetrack) > config.min_fixes
+                        print(f"* {p.name}: getting to live check")
+                        check_livetrack(result=p, task=self.task, airspace=self.airspace)
+                        print(f"after check_livetrack in run")
+                        print(f"{p.name} first_time: {p.first_time}, last_time: {p.last_time}, live comment: {p.live_comment}")
+                        if (p.landing_time or p.goal_time) and p.track_id is None:
+                            '''pilot landed or made goal, save track result'''
+                            print(f"{p.name} before track saving: {p.result_type}, live comment: {p.live_comment}")
+                            save_livetrack_result(p, self.task, self.airspace)
+                            valid_results.append(track_result_output(p, self.task.task_id))
+                            if p.track_id:
+                                print(f"{p.name}: Track saved: track_id: {p.track_id}")
+                            else:
+                                #error saving the db record, usually for altitude out of range
+                                print(f"{p.name}: error saving Track. track_id: {p.track_id}")
+                            print(f"result_type: {p.result_type}, live comment: {p.live_comment}")
+                            p.live_comment = 'landed'
                     self.update_pilot_result(p)
 
                 self.create_json_file()
