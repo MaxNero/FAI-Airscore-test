@@ -73,7 +73,7 @@ def read_task(data: dict) -> dict:
                 wpt = dict(
                     num=idx,
                     name=w['name'],
-                    description=w['description'],
+                    description=w.get('description'),
                     lat=w['lat'], lon=w['lon'],
                     altitude=int(w['altSmoothed']),
                     radius=int(el['radius']),
