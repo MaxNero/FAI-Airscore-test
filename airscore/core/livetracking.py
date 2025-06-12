@@ -616,7 +616,7 @@ class LiveTracking(object):
                 print(f'{self.now}: -- Checking tracks ...')
 
                 for p in self.flying_pilots:
-                    if len(p.livetrack) > config.min_fixes
+                    if len(p.livetrack) > config.min_fixes:
                         print(f"* {p.name}: getting to live check")
                         check_livetrack(result=p, task=self.task, airspace=self.airspace)
                         print(f"after check_livetrack in run")
