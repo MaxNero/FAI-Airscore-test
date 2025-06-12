@@ -148,11 +148,11 @@ function populate_task(json){
                 });
             });
             // comments
-            if (json.results.some(e => e.penalty != 0)) {
+            if (json.results.some(e => e.penalty != 0  || e.comment >'' ) ) {
                 $('#comments').append('<a class="badge badge-info mb-2" href="/task_airspace/'+json.info.id+'">Parameters</a>');
                 let tbl = document.createElement('table');
                 tbl.classList.add('comment_list');
-                let filtered = json.results.filter(e => e.penalty != 0);
+                let filtered = json.results.filter(e => e.penalty != 0 || e.comment >'');
                 filtered.forEach(pilot => {
                     let row = tbl.insertRow();
                     [ pilot.name + ': ', pilot.comment ].forEach(el => {
