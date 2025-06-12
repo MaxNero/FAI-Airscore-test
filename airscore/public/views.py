@@ -251,16 +251,16 @@ def reset_password_request():
     if reset_form.validate_on_submit():
         user = User.query.filter_by(email=reset_form.email.data).first()
         if user:
-            if frontendUtils.production():
-                current_app.task_queue.enqueue('send_email.send_password_reset_email', user)
+            # import email
+            token = user.get_reset_password_token()
+            subject = "[Airscore] Reset Your Password"
+            text = render_template('email/reset_password.txt', user=user, token=token)
+            html = render_template('email/reset_password.html', user=user, token=token)
+            resp, error = frontendUtils.send_email(recipients=[user.email], subject=subject, text_body=text, html_body=html)
+            if resp:
+                flash('Check your email for the instructions to reset your password', category='info')
             else:
-                # import email
-                token = user.get_reset_password_token()
-                subject = '[Airscore] Reset Your Password'
-                text = render_template('email/reset_password.txt', user=user, token=token),
-                html = render_template('email/reset_password.html', user=user, token=token),
-                frontendUtils.send_email(recipients=user.email, subject=subject, text_body=text, html_body=html)
-        flash('Check your email for the instructions to reset your password', category='info')
+                flash('There was an error sending email to reset your password', category='danger')
         return redirect(url_for('public.home'))
     return render_template('public/reset_password_request.html',
                            title='Reset Password', reset_form=reset_form, form=form)
