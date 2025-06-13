@@ -673,7 +673,7 @@ def get_livetracks(task: LiveTask, pilots: list, timestamp, interval: int = defa
 
         grp = task.ext_server_id
         token = task.ext_server_token
-        url = FM_LIVE + f"grp={grp}&token={token}&trkref=CompeID&trackers={jsonpickle.encode(request)}"
+        url = FM_LIVE + f"grp={grp}&token={token}&endtime={timestamp}&trkref=CompeID&trackers={jsonpickle.encode(request)}"
         if request:
             try:
                 response = requests.get(url)
