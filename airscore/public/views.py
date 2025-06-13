@@ -903,11 +903,9 @@ def _get_livetracking(taskid: int):
                 comment = ''
             '''delay'''
             if not (el['landing_time'] or el['goal_time']) and el['last_time'] and rawtime - el['last_time'] > 300:  # 5 mins old
-                if rawtime - el['last_time'] > 600:  # 10 minutes old
-                    status = f"[disconnected]"
-                else:
-                    m, s = divmod(rawtime - el['last_time'], 60)
-                    status += f" [{m:02d}:{s:02d} old]"
+                m, s = divmod(rawtime - el['last_time'], 60)
+                delay = f" [{m:02d}:{s:02d} old]"
+                status = status + delay if rawtime - el['last_time'] < 600 else delay.strip()
 
             # live taskboard leading calculation:
             # will show top leading pilot and top 20 pilots preview of leading after ESS
