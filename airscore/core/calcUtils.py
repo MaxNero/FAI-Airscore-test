@@ -201,7 +201,7 @@ def sec_to_time(sec):
     seconds = int(sec)
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
-    return time(hour=h, minute=m, second=s)
+    return time(hour=h % 24, minute=m, second=s)
 
 
 def sec_to_string(rawtime: int, offset: int = 0, hours=True, seconds=True):
