@@ -13,9 +13,10 @@ Antonio Golfari, Stuart Mackintosh - 2021
 import math
 
 from igc_lib import Flight, FlightParsingConfig, GNSSFix
-from pathlib2 import Path
+from pathlib import Path
 from task import Task
 
+DAY = 24 * 3600  # seconds in a day
 
 class Track(Flight):
 
@@ -219,11 +220,23 @@ class Track(Flight):
         # return flight
 
 
-def parse_igc_file(lines: list, task: (Task or None) = None) -> tuple:
+def parse_igc_file(lines: list, task: "Task | None" = None) -> tuple:
+    """
+    Parses an IGC file and extracts relevant records.
+
+    Args:
+        lines: A list of lines from the IGC file.
+        task: An optional Task object to limit the parsing to a specific task.
+
+    Returns:
+        A tuple containing the extracted fixes, A records, I records, and H records.
+    """
     fixes = []
     a_records = []
     i_records = []
     h_records = []
+    days = 0
+
     for line in lines:
         line = line.replace('\n', '').replace('\r', '')
         if not line:
@@ -248,11 +261,19 @@ def parse_igc_file(lines: list, task: (Task or None) = None) -> tuple:
         elif line[0] == 'B':
             fix = GNSSFix.build_from_B_record(line, index=len(fixes))
             if fix is not None:
+                rawtime = fix.rawtime
+                # Check if the track is going though the day UTC time
+                if task and fixes:
+                    if fixes[-1].rawtime > fix.rawtime and fix.rawtime + DAY < fixes[-1].rawtime + 200.0:
+                        # The time has gone through the day UTC time.
+                        days += 1
+                    rawtime += DAY * days
+                # Check if the fix is a duplicate of the previous one
                 if fixes and math.fabs(fix.rawtime - fixes[-1].rawtime) < 1e-5:
                     # The time did not change since the previous fix.
                     # Ignore this fix.
                     pass
-                elif task and not (task.window_open_time - 1 <= fix.rawtime <= task.task_deadline + 1):
+                elif task and not (task.window_open_time - 1 <= rawtime <= task.task_deadline + 1):
                     # We are out of task time.
                     # Ignore this fix.
                     pass
