@@ -6,9 +6,13 @@ from pathlib import Path
 
 def create_test_task(data: dict) -> obj_factories.TaskFactory:
     task = obj_factories.TaskFactory()
-    task.as_dict().update(data.get('info'))
-    formula = obj_factories.TaskFormulaFactory(task_id=1)
-    formula.as_dict().update(data.get('formula'))
+    for key, value in data.get('info', {}).items():
+        if hasattr(task, key):
+            setattr(task, key, value)
+    formula = obj_factories.TaskFormulaFactory(task_id=1).from_preset('HG', 'GAP2020')
+    for key, value in data.get('formula', {}).items():
+        if hasattr(formula, key):
+            setattr(formula, key, value)
     task.formula = formula
     task.opt_dist_to_SS = 863.525
     task.opt_dist_to_ESS = 84760.5
@@ -23,10 +27,14 @@ def create_test_pilots(data: dict, el=None) -> list:
 
         for key, value in r.items():
             if key == 'notifications' and value:
-                pilot.notifications = [obj_factories.NotificationFactory(notification_type=el['notification_type'],
-                                                                         flat_penalty=el['flat_penalty'],
-                                                                         percentage_penalty=el['percentage_penalty'],
-                                                                         comment=el['comment']) for el in value]
+                pilot.notifications = [
+                    obj_factories.NotificationFactory(
+                        notification_type=el['notification_type'],
+                        flat_penalty=el['flat_penalty'],
+                        percentage_penalty=el['percentage_penalty'],
+                        comment=el['comment']
+                    ) for el in value
+                ]
             elif hasattr(pilot, key):
                 setattr(pilot, key, value)
 
@@ -110,8 +118,8 @@ def test_score_calculation():
     absents = [p for p in pilots if p.result_type == 'abs']
     valid_results = [p for p in pilots if p.result_type not in ('abs', 'dnf', 'nyp')]
     non_valid_results = [p for p in pilots if p.result_type in ('abs', 'dnf', 'nyp')]
-    lo_pilots = [p for p in pilots if not p.goal_time]
-    no_ess_pilots = [p for p in pilots if not p.ESS_time]
+    lo_pilots = [p for p in pilots if p.goal_time is None]
+    no_ess_pilots = [p for p in pilots if p.ESS_time is None]
 
     '''no pilots'''
     test_task.pilots = []
