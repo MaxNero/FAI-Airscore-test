@@ -123,6 +123,8 @@ def check_fixes(
                         result.suspect_landing_fix = None
         else:
             alt = next_fix.gnss_alt if alt_source == 'GPS' else next_fix.press_alt + alt_compensation
+            my_fix.epoch = task.date_utc_epoch + my_fix.rawtime
+            next_fix.epoch = task.date_utc_epoch + next_fix.rawtime
 
             if next_fix.rawtime < result.first_time:
                 '''skip'''
@@ -149,7 +151,7 @@ def check_fixes(
             break
 
         '''check if task deadline has passed'''
-        if task.task_deadline < next_fix.rawtime:
+        if task.task_deadline_epoch < next_fix.epoch:
             # Task has ended
             result.still_flying_at_deadline = True
             break
@@ -159,7 +161,7 @@ def check_fixes(
             break
 
         '''check if start closing time passed and pilot did not start'''
-        if task.start_close_time and task.start_close_time < my_fix.rawtime and not tp.start_done:
+        if task.start_close_time and task.start_close_time_epoch < my_fix.epoch and not tp.start_done:
             # start closed
             break
 
@@ -168,7 +170,7 @@ def check_fixes(
             assert False, f"Unknown turnpoint type: {tp.type}"
 
         '''check window is open'''
-        if task.window_open_time > next_fix.rawtime:
+        if task.window_open_time_epoch > next_fix.epoch:
             continue
 
         '''launch turnpoint managing'''
@@ -386,10 +388,12 @@ def pilot_can_start(task, tp, fix):
     - task is elapsed time
     '''
     max_jump_the_gun = task.formula.max_JTG or 0
+    start = task.start_time_epoch
+    start_close = task.start_close_time_epoch
     if (
         (tp.type == "speed")
-        and (fix.rawtime >= (task.start_time - max_jump_the_gun))
-        and (not task.start_close_time or fix.rawtime <= task.start_close_time)
+        and (fix.epoch >= (start - max_jump_the_gun))
+        and (not task.start_close_time or fix.epoch <= start_close)
     ):
         return True
     else:
@@ -410,12 +414,15 @@ def pilot_can_restart(task: Task, tp: FlightPointer, fix, result: FlightResult) 
     - task is elapsed time
     '''
     max_jump_the_gun = task.formula.max_JTG or 0
-    if tp.last_made.type == "speed" and (not task.start_close_time or fix.rawtime < task.start_close_time):
+    start = task.start_time_epoch
+    start_close = task.start_close_time_epoch
+    if tp.last_made.type == "speed" and (not task.start_close_time or fix.epoch < start_close):
+        real_start_time = task.date_utc_epoch + result.real_start_time
         if task.task_type == 'elapsed time':
             return True
-        elif max_jump_the_gun > 0 and result.real_start_time < task.start_time:
+        elif max_jump_the_gun > 0 and real_start_time < start:
             return True
-        elif task.SS_interval and pilot_get_better_start(task, fix.rawtime, result.real_start_time):
+        elif task.SS_interval and pilot_get_better_start(task, fix.rawtime, real_start_time):
             return True
     return False
 

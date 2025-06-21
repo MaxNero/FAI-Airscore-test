@@ -49,10 +49,11 @@ default_interval = 180  # seconds
 
 class LiveFix(GNSSFix):
     """GNSSFix from igc_lib, a little easier to initialise, adding alt attribute as gps alt if not specified"""
-    def __init__(self, rawtime, lat, lon, press_alt, gnss_alt, alt=None, height=None, speed=None, index=None):
+    def __init__(self, d, rawtime, lat, lon, press_alt, gnss_alt, alt=None, height=None, speed=None, index=None):
         self.alt = alt or gnss_alt
         self.height = height
         self.speed = speed
+        self.epoch = d
 
         super().__init__(
             rawtime=rawtime,
@@ -724,6 +725,7 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
         # print(f"{pil.name}: first_time {pil.first_time} - adding fixes to pilot object")
         # print(f"Fixes to add: {len(fixes)}")
         for idx, el in enumerate(fixes):
+            d = int(el['d'])
             t = int(el['d']) - midnight
             s = int(el['v'])
             baro_alt = int(el['c'])
@@ -739,7 +741,7 @@ def associate_livetracks(task: LiveTask, pilots: list, response, timestamp):
                 break
             lat = int(el['ai']) / 60000
             lon = int(el['oi']) / 60000
-            flight.append(LiveFix(t, lat, lon, baro_alt, gnss_alt, alt, height, s, idx))
+            flight.append(LiveFix(d, t, lat, lon, baro_alt, gnss_alt, alt, height, s, idx))
         pil.livetrack = flight
         print(f"{pil.name}: livetrack fixes: {len(pil.livetrack)}")
         if pil.livetrack:

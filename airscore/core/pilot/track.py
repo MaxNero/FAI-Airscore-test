@@ -263,7 +263,7 @@ def parse_igc_file(lines: list, task: "Task | None" = None) -> tuple:
             if fix is not None:
                 rawtime = fix.rawtime
                 # Check if the track is going though the day UTC time
-                if task and fixes:
+                if task and len(fixes):
                     if fixes[-1].rawtime > fix.rawtime and fix.rawtime + DAY < fixes[-1].rawtime + 200.0:
                         # The time has gone through the day UTC time.
                         days += 1
@@ -273,7 +273,7 @@ def parse_igc_file(lines: list, task: "Task | None" = None) -> tuple:
                     # The time did not change since the previous fix.
                     # Ignore this fix.
                     pass
-                elif task and not (task.window_open_time - 1 <= rawtime <= task.task_deadline + 1):
+                elif task and task.ready_to_score and not (task.window_open_time_epoch - 1 <= task.date_utc_epoch + rawtime <= task.task_deadline_epoch + 1):
                     # We are out of task time.
                     # Ignore this fix.
                     pass

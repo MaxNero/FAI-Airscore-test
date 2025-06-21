@@ -22,6 +22,7 @@ Add support for FAI Sphere ???
 
 from os import makedirs, path, remove
 from pathlib import Path
+from datetime import datetime, timedelta
 
 import jsonpickle
 from airspace import AirspaceCheck
@@ -229,8 +230,51 @@ class Task(object):
         return self.task_id
 
     @property
+    def date_utc(self):
+        """ Returns task date in UTC
+            we are interested in UTC date of window_open_time, i.e. the earlier of Task times"""
+        if self.window_open_time is None or self.date is None:
+            return None
+        return self.date + timedelta(seconds=self.window_open_time)
+
+    @property
+    def date_epoch(self):
+        """ Returns task date in epoch seconds"""
+        return None if self.date is None else datetime.combine(self.date, datetime.min.time()).timestamp()
+
+    @property
+    def date_utc_epoch(self):
+        """ Returns task date in UTC epoch seconds"""
+        return None if self.date_utc is None else datetime.combine(self.date_utc, datetime.min.time()).timestamp()
+
+    @property
+    def window_open_time_epoch(self):
+        """ Returns task window open time in epoch seconds"""
+        return None if self.window_open_time is None else self.date_epoch + self.window_open_time
+
+    @property
+    def window_close_time_epoch(self):
+        """ Returns task window close time in epoch seconds"""
+        return None if self.window_close_time is None else self.date_epoch + self.window_close_time
+
+    @property
+    def start_time_epoch(self):
+        """ Returns task start time in epoch seconds"""
+        return None if self.start_time is None else self.date_epoch + self.start_time
+
+    @property
+    def start_close_time_epoch(self):
+        """ Returns task start close time in epoch seconds"""
+        return None if self.start_close_time is None else self.date_epoch + self.start_close_time
+
+    @property
+    def task_deadline_epoch(self):
+        """ Returns task deadline time in epoch seconds"""
+        return None if self.task_deadline is None else self.date_epoch + self.task_deadline
+
+    @property
     def date_str(self):
-        return self.date.strftime("%Y-%m-%d")
+        return self.date.strftime("%Y-%m-%d") if self.date else None
 
     @property
     def task_code(self):

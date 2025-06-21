@@ -425,7 +425,7 @@ def create_igc_filename(file_path: str, date, pilot_name: str, pilot_id: int = N
     return fullname
 
 
-def import_igc_file(file, task, parsing_config, check_g_record=False) -> Track or str:
+def import_igc_file(file: Path, task, parsing_config, check_g_record=False) -> Track or str:
     from calcUtils import epoch_to_date
     if check_g_record:
         print('Checking G-Record...')
@@ -450,7 +450,8 @@ def import_igc_file(file, task, parsing_config, check_g_record=False) -> Track o
                  'text': f"IGC does not meet quality standard set by igc parsing config. "
                          f"Notes: {'; '.join(flight.notes)}"})
 
-    elif not epoch_to_date(flight.date_timestamp) == task.date:
+    elif not flight.date_timestamp == task.date_utc_epoch:
+        """check if track date is the same as task date"""
         return False, {'code': 'track_error', 'text': f"track has a different date from task"}
 
     return flight, None
