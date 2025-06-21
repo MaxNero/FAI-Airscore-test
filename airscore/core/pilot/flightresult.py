@@ -52,7 +52,7 @@ class FlightResult(Participant):
         self,
         first_time=None,
         real_start_time=None,
-        SSS_time=0,
+        SSS_time=None,
         ESS_time=None,
         goal_time=None,
         last_time=None,
@@ -123,7 +123,7 @@ class FlightResult(Participant):
 
     @property
     def ss_time(self):
-        if self.ESS_time:
+        if self.ESS_time is not None:
             return self.ESS_time - self.SSS_time
         else:
             return None
@@ -596,7 +596,7 @@ def adjust_flight_results(task, lib, airspace=None):
 
     maxtime = task.duration
     for pilot in task.pilots:
-        if pilot.SSS_time:
+        if pilot.SSS_time is not None:
             last_time = pilot.SSS_time + maxtime
             if (not pilot.ESS_time and pilot.best_distance_time > last_time) or (
                 pilot.ESS_time and pilot.ss_time > maxtime

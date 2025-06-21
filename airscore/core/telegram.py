@@ -35,7 +35,7 @@ def get_download_status(task_id: int):
         for pilot in results:
             data = {'ID': pilot.ID, 'name': pilot.name}
             if pilot in valid_results:
-                if pilot.ESS_time:
+                if pilot.ESS_time is not None:
                     time = sec_to_time(pilot.ESS_time - pilot.SSS_time)
                     if pilot.result_type == 'goal':
                         result = f'GOAL {time}'

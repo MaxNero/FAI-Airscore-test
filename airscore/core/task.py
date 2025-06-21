@@ -454,15 +454,15 @@ class Task(object):
 
     @property
     def results_with_SSS_time(self):
-        return [pilot for pilot in self.valid_results if pilot.SSS_time and pilot.SSS_time > 0]
+        return [pilot for pilot in self.valid_results if pilot.SSS_time is not None]
 
     @property
     def results_with_ESS_time(self):
-        return [pilot for pilot in self.valid_results if pilot.ESS_time and pilot.ESS_time > 0]
+        return [pilot for pilot in self.valid_results if pilot.ESS_time is not None]
 
     @property
     def results_in_goal(self):
-        return [pilot for pilot in self.valid_results if pilot.goal_time and pilot.goal_time > 0]
+        return [pilot for pilot in self.valid_results if pilot.goal_time is not None]
 
     @property
     def results_landed_out(self):
