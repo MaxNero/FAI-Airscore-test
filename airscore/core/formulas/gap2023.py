@@ -332,7 +332,7 @@ def pilot_speed(task, res):
     GAP2020 has been amended. V2.0 has same formula for both HG and PG:
     SF = max(0, 1 - ((Ptime - MinTime)/sqrt(MinTime))**(5/6))
     """
-    if not res.ESS_time:
+    if not res.ESS_time or not task.avail_time_points:
         return 0
     Aspeed = task.avail_time_points
 
@@ -404,7 +404,7 @@ def points_allocation(task):
 
                 ''' Penalty for not making goal'''
                 if not res.goal_time:
-                    res.goal_time = 0
+                    res.goal_time = None
                     res.time_score *= 1 - formula.no_goal_penalty
                     res.arrival_score *= 1 - formula.no_goal_penalty
 

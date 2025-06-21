@@ -359,7 +359,7 @@ def points_allocation(task):
 
                 ''' Penalty for not making goal'''
                 if not res.goal_time:
-                    res.goal_time = 0
+                    res.goal_time = None
                     res.time_score *= 1 - formula.no_goal_penalty
 
         ''' Apply Penalty'''
