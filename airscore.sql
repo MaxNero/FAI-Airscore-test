@@ -902,6 +902,19 @@ CREATE TABLE `tblRegionWaypoint` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+DELIMITER ;;
+CREATE TRIGGER `ensure description` BEFORE INSERT ON `tblRegionWaypoint` FOR EACH ROW begin
+	if coalesce(new.description,'')='' then
+	   set new.description=new.name;
+    end if;
+end;;
+
+CREATE TRIGGER `checkconsistency` BEFORE UPDATE ON `tblRegionWaypoint` FOR EACH ROW begin
+	if coalesce(new.description,'')='' then
+	   set new.description=new.name;
+    end if;
+end;;
+DELIMITER ;
 
 --
 -- Table structure for table `tblRegionXCSites`
