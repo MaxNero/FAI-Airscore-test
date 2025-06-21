@@ -563,21 +563,6 @@ def in_goal_sector(task, fix):
     return False
 
 
-def rawtime_float_to_hms(timef):
-    """Converts time from floating point seconds to hours/minutes/seconds.
-
-    Args:
-        timef: A floating point time in seconds to be converted
-
-    Returns:
-        A namedtuple with hours, minutes and seconds elements
-    """
-    time = int(c_round(timef))
-    hms = namedtuple('hms', ['hours', 'minutes', 'seconds'])
-
-    return hms(math.floor(time / 3600), math.floor((time % 3600) / 60), math.floor(time % 60))
-
-
 def distance_flown(fix, i, short_route, wpt, distances_to_go):
     """Calculate distance flown
     For exit wpts it uses distance from cylinders"""

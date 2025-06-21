@@ -1,3 +1,24 @@
+from dataclasses import dataclass
+from calcUtils import c_round
+
+
+@dataclass
+class HMS:
+    hours: int
+    minutes: int
+    seconds: int
+
+
+def rawtime_to_hms(timef: float) -> HMS:
+    """Converts floating-point seconds to (DHMS)"""
+    rawtime = int(c_round(timef))  # ensure numeric and rounded
+    # d, rawtime = divmod(rawtime, 86400)
+    h = rawtime // 3600
+    m = (rawtime % 3600) // 60
+    s = rawtime % 60
+    return HMS(h, m, s)
+
+
 def checkbbox(lat, lon, bbox):
     if lat < bbox[0][0]:
         bbox[0][0] = lat
@@ -221,9 +242,8 @@ def result_to_geojson(result, task, flight, second_interval=5):
     returns the Json string."""
 
     from collections import namedtuple
-
     from geojson import Feature, FeatureCollection, MultiLineString, Point
-    from route import distance, rawtime_float_to_hms
+    from route import distance
 
     features = []
     takeoff_landing = []
@@ -239,17 +259,17 @@ def result_to_geojson(result, task, flight, second_interval=5):
     bbox = [[min_lat, min_lon], [max_lat, max_lon]]
 
     takeoff = Point((flight.takeoff_fix.lon, flight.takeoff_fix.lat))
-    time = "%02d:%02d:%02d" % rawtime_float_to_hms(flight.takeoff_fix.rawtime + task.time_offset)
+    time = get_adjusted_time(flight.takeoff_fix.rawtime, task.time_offset)
     takeoff_landing.append(Feature(geometry=takeoff, properties={"event": "TakeOff", "time": time}))
     landing = Point((flight.landing_fix.lon, flight.landing_fix.lat))
-    time = "%02d:%02d:%02d" % rawtime_float_to_hms(flight.landing_fix.rawtime + task.time_offset)
+    time = get_adjusted_time(flight.landing_fix.rawtime, task.time_offset)
     takeoff_landing.append(Feature(geometry=landing, properties={"event": "Landing", "time": time}))
 
     fixes_to_keep.extend([flight.takeoff_fix.rawtime, flight.landing_fix.rawtime])
     # adding best distance fix if not in goal
     if not result.goal_time and hasattr(result, 'best_distance_fix') and result.best_distance_fix:
         best_distance = Point((result.best_distance_fix.lon, result.best_distance_fix.lat))
-        time = "%02d:%02d:%02d" % rawtime_float_to_hms(result.best_distance_fix.rawtime + task.time_offset)
+        time = get_adjusted_time(result.best_distance_fix.rawtime, task.time_offset)
         takeoff_landing.append(Feature(geometry=best_distance, properties={"event": "BestDistance", "time": time}))
         fixes_to_keep.append(result.best_distance_fix.rawtime)
 
@@ -274,7 +294,7 @@ def result_to_geojson(result, task, flight, second_interval=5):
 
     if len(result.waypoints_achieved) > 0:
         for idx, tp in enumerate(result.waypoints_achieved):
-            time = "%02d:%02d:%02d" % rawtime_float_to_hms(tp.rawtime + task.time_offset)
+            time = get_adjusted_time(tp.rawtime, task.time_offset)
             achieved = [
                 tp.lon,
                 tp.lat,
@@ -290,13 +310,12 @@ def result_to_geojson(result, task, flight, second_interval=5):
                 previous = point(lon=waypoints_achieved[-1][0], lat=waypoints_achieved[-1][1])
                 straight_line_dist = distance(previous, current) / 1000
                 time_taken = tp.rawtime - waypoints_achieved[-1][4]
-                time_takenHMS = rawtime_float_to_hms(time_taken)
                 if time_taken > 0:
                     speed = straight_line_dist / (time_taken / 3600)
                 else:
                     speed = 0
                 achieved.append(round(straight_line_dist, 2))
-                achieved.append("%02d:%02d:%02d" % time_takenHMS)
+                achieved.append(get_adjusted_time(time_taken, elapsed_time=True))
                 achieved.append(round(speed, 2))
             else:
                 achieved.extend([0, "0:00:00", '-'])
@@ -305,7 +324,7 @@ def result_to_geojson(result, task, flight, second_interval=5):
     '''airspace infringements'''
     if result.infringements:
         for entry in result.infringements:
-            time = "%02d:%02d:%02d" % rawtime_float_to_hms(entry['rawtime'] + task.time_offset)
+            time = get_adjusted_time(entry['rawtime'], task.time_offset)
             infringements.append(
                 [
                     entry['lon'],
@@ -445,3 +464,17 @@ def create_airspace_layer(openair_file: str) -> tuple:
         airspace_list = None
         bbox = None
     return airspace_layer, airspace_list, bbox
+
+
+def get_adjusted_time(rawtime: float, offset: float = 0, elapsed_time: bool = False) -> str:
+
+    adjusted_time = rawtime + offset
+    d = 0
+    if not elapsed_time:
+        d, adjusted_time = divmod(adjusted_time, 86400)
+    hms = rawtime_to_hms(adjusted_time)
+    time = f"{hms.hours:02}:{hms.minutes:02}:{hms.seconds:02}"
+    if d:
+        time += f" (+{int(d)})"
+
+    return time
